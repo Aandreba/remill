@@ -601,7 +601,8 @@ llvm::Value *InstructionLifter::LiftRegisterOperand(Instruction &inst,
         if (val_type->isVectorTy()) {
           // Vector types can be directly bitcast to integers of the same size.
           auto int_type = llvm::Type::getIntNTy(module->getContext(), val_size);
-          val = new llvm::BitCastInst(val, int_type, llvm::Twine::createNull(), block);
+          val = new llvm::BitCastInst(val, int_type, llvm::Twine::createNull(),
+                                      block);
 
           val_type = int_type;
         } else if (val_type->isArrayTy()) {
@@ -611,11 +612,14 @@ llvm::Value *InstructionLifter::LiftRegisterOperand(Instruction &inst,
           // Workaround: store array to stack, bitcast the pointer to int*, then load.
           // This gets optimized away by LLVM but satisfies the type system.
           auto int_type = llvm::Type::getIntNTy(module->getContext(), val_size);
-          auto temp_alloca = new llvm::AllocaInst(val_type, 0, llvm::Twine::createNull(), block);
+          auto temp_alloca = new llvm::AllocaInst(
+              val_type, 0, llvm::Twine::createNull(), block);
           new llvm::StoreInst(val, temp_alloca, block);
-          auto int_ptr = new llvm::BitCastInst(temp_alloca, llvm::PointerType::get(int_type, 0),
-                                                llvm::Twine::createNull(), block);
-          val = new llvm::LoadInst(int_type, int_ptr, llvm::Twine::createNull(), block);
+          auto int_ptr = new llvm::BitCastInst(
+              temp_alloca, llvm::PointerType::get(int_type, 0),
+              llvm::Twine::createNull(), block);
+          val = new llvm::LoadInst(int_type, int_ptr, llvm::Twine::createNull(),
+                                   block);
           val_type = int_type;
         }
         CHECK(val_type->isIntegerTy())
@@ -646,17 +650,21 @@ llvm::Value *InstructionLifter::LiftRegisterOperand(Instruction &inst,
         if (val_type->isVectorTy()) {
           // Vector types can be directly bitcast to integers of the same size.
           auto int_type = llvm::Type::getIntNTy(module->getContext(), val_size);
-          val = new llvm::BitCastInst(val, int_type, llvm::Twine::createNull(), block);
+          val = new llvm::BitCastInst(val, int_type, llvm::Twine::createNull(),
+                                      block);
 
           val_type = int_type;
         } else if (val_type->isArrayTy()) {
           // Array types require store-bitcast-load pattern (see comment above).
           auto int_type = llvm::Type::getIntNTy(module->getContext(), val_size);
-          auto temp_alloca = new llvm::AllocaInst(val_type, 0, llvm::Twine::createNull(), block);
+          auto temp_alloca = new llvm::AllocaInst(
+              val_type, 0, llvm::Twine::createNull(), block);
           new llvm::StoreInst(val, temp_alloca, block);
-          auto int_ptr = new llvm::BitCastInst(temp_alloca, llvm::PointerType::get(int_type, 0),
-                                                llvm::Twine::createNull(), block);
-          val = new llvm::LoadInst(int_type, int_ptr, llvm::Twine::createNull(), block);
+          auto int_ptr = new llvm::BitCastInst(
+              temp_alloca, llvm::PointerType::get(int_type, 0),
+              llvm::Twine::createNull(), block);
+          val = new llvm::LoadInst(int_type, int_ptr, llvm::Twine::createNull(),
+                                   block);
           val_type = int_type;
         }
 

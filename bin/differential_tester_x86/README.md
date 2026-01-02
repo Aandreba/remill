@@ -1,1 +1,0 @@
-The checked in whitelist.json covers the known sleigh bugs that we currently are not handling
