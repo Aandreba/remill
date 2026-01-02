@@ -68,7 +68,7 @@ void OptimizeBareModule(llvm::Module *module, OptimizationGuide guide) {
   llvm::PipelineTuningOptions opts;
 #if LLVM_VERSION_MAJOR >= 16
   opts.InlinerThreshold = 250;
-#endif // LLVM_VERSION_MAJOR
+#endif  // LLVM_VERSION_MAJOR
   llvm::PassBuilder pb(nullptr, opts);
 
   pb.registerModuleAnalyses(mam);

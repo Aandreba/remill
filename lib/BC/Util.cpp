@@ -552,42 +552,12 @@ namespace {
 #ifndef REMILL_BUILD_SEMANTICS_DIR_X86
 #  error \
       "Macro `REMILL_BUILD_SEMANTICS_DIR_X86` must be defined to support X86 and AMD64 architectures."
-#  define REMILL_BUILD_SEMANTICS_DIR_X86
+#  define REMILL_BUILD_SEMANTICS_DIR_X86 ""
 #endif  // REMILL_BUILD_SEMANTICS_DIR_X86
-
-#ifndef REMILL_BUILD_SEMANTICS_DIR_AARCH32
-#  error \
-      "Macro `REMILL_BUILD_SEMANTICS_DIR_AARCH32` must be defined to support AArch64 architecture."
-#  define REMILL_BUILD_SEMANTICS_DIR_AARCH32
-#endif  // REMILL_BUILD_SEMANTICS_DIR_AARCH32
-
-#ifndef REMILL_BUILD_SEMANTICS_DIR_AARCH64
-#  error \
-      "Macro `REMILL_BUILD_SEMANTICS_DIR_AARCH64` must be defined to support AArch64 architecture."
-#  define REMILL_BUILD_SEMANTICS_DIR_AARCH64
-#endif  // REMILL_BUILD_SEMANTICS_DIR_AARCH64
-
-#ifndef REMILL_BUILD_SEMANTICS_DIR_SPARC32
-#  error \
-      "Macro `REMILL_BUILD_SEMANTICS_DIR_SPARC32` must be defined to support the SPARC32 architectures."
-#  define REMILL_BUILD_SEMANTICS_DIR_SPARC32
-#endif  // REMILL_BUILD_SEMANTICS_DIR_SPARC32
-
-#ifndef REMILL_BUILD_SEMANTICS_DIR_SPARC64
-#  error \
-      "Macro `REMILL_BUILD_SEMANTICS_DIR_SPARC64` must be defined to support the SPARC64 architectures."
-#  define REMILL_BUILD_SEMANTICS_DIR_SPARC64
-#endif  // REMILL_BUILD_SEMANTICS_DIR_SPARC64
-
-#ifndef REMILL_BUILD_SEMANTICS_DIR_PPC64_32ADDR
-#  error \
-      "Macro `REMILL_BUILD_SEMANTICS_DIR_PPC64_32ADDR` must be defined to support the PPC64_32ADDR architectures."
-#  define REMILL_BUILD_SEMANTICS_DIR_PPC64_32ADDR
-#endif  // REMILL_BUILD_SEMANTICS_DIR_PPC64_32ADDR
 
 #ifndef REMILL_INSTALL_SEMANTICS_DIR
 #  error "Macro `REMILL_INSTALL_SEMANTICS_DIR` must be defined."
-#  define REMILL_INSTALL_SEMANTICS_DIR
+#  define REMILL_INSTALL_SEMANTICS_DIR ""
 #endif  // REMILL_INSTALL_SEMANTICS_DIR
 
 #define _S(x) #x
@@ -599,11 +569,6 @@ using paths_t = std::vector<std::filesystem::path>;
 const paths_t &DefaultSemanticsSearchPaths() {
   static const paths_t paths = {
       REMILL_BUILD_SEMANTICS_DIR_X86,
-      REMILL_BUILD_SEMANTICS_DIR_AARCH32,
-      REMILL_BUILD_SEMANTICS_DIR_AARCH64,
-      REMILL_BUILD_SEMANTICS_DIR_SPARC32,
-      REMILL_BUILD_SEMANTICS_DIR_SPARC64,
-      REMILL_BUILD_SEMANTICS_DIR_PPC64_32ADDR,
       REMILL_INSTALL_SEMANTICS_DIR,
       "/usr/local/share/remill/" MAJOR_MINOR "/semantics",
       "/usr/share/remill/" MAJOR_MINOR "/semantics",
@@ -1538,7 +1503,7 @@ static void MoveInstructionIntoModule(llvm::Instruction *inst,
       phi->setIncomingBlock(i, incoming_block);
     }
 
-  // Substitute the called function.
+    // Substitute the called function.
   } else if (auto call = llvm::dyn_cast<llvm::CallInst>(inst)) {
     if (auto callee_func = call->getCalledFunction()) {
       if (callee_func->getParent() != dest_module) {
@@ -1620,7 +1585,7 @@ llvm::Metadata *CloneMetadataInto(llvm::Module *source_mod,
     }
     mapped_md = llvm::MDTuple::get(dest_context, mapped_ops);
 
-  // Not supported.
+    // Not supported.
   } else {
     return nullptr;
   }
@@ -1859,7 +1824,7 @@ void MoveFunctionIntoModule(llvm::Function *func, llvm::Module *dest_module) {
     func->setName(func_name);
     dest_module->getFunctionList().push_back(func);
 
-  // TODO(pag): Probably clone it into the destination module.
+    // TODO(pag): Probably clone it into the destination module.
   } else {
     LOG(FATAL) << "TODO: Not yet supported.";
   }
@@ -2313,18 +2278,18 @@ BuildIndexes(const llvm::DataLayout &dl, llvm::Type *type, size_t offset,
         prev_elem_type = elem_type;
         continue;
 
-      // Indexing into the `i`th element.
+        // Indexing into the `i`th element.
       } else if ((offset + elem_offset) <= goal_offset) {
         indexes_out.push_back(llvm::ConstantInt::get(index_type, i, false));
         return BuildIndexes(dl, elem_type, offset + elem_offset, goal_offset,
                             indexes_out);
 
-      // We're indexing into some padding before the current element.
+        // We're indexing into some padding before the current element.
       } else if (i) {
         indexes_out.push_back(llvm::ConstantInt::get(index_type, i - 1, false));
         return {offset + prev_elem_offset, prev_elem_type};
 
-      // We're indexing into some padding at the beginning of this structure.
+        // We're indexing into some padding at the beginning of this structure.
       } else {
         return {offset, type};
       }

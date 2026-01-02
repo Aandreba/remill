@@ -17,7 +17,7 @@
 #pragma once
 
 #ifndef REMILL_ARCH
-#  if defined(__x86_64__)
+#  if defined(__x86_64__) || defined(_M_AMD64)
 #    define REMILL_ARCH "amd64_avx"
 #    define REMILL_ON_AMD64 1
 #    define REMILL_ON_X86 0
@@ -35,7 +35,7 @@
 #    define REMILL_ON_SPARC64 0
 #    define REMILL_ON_SPARC32 0
 #    define REMILL_ON_PPC 0
-#  elif defined(__aarch64__)
+#  elif defined(__aarch64__) || defined(_M_ARM64)
 #    define REMILL_ARCH "aarch64"
 #    define REMILL_ON_AMD64 0
 #    define REMILL_ON_X86 0
@@ -104,24 +104,10 @@ enum ArchName : std::uint32_t {
   kArchX86,
   kArchX86_AVX,
   kArchX86_AVX512,
-  kArchX86_SLEIGH,
 
   kArchAMD64,
   kArchAMD64_AVX,
   kArchAMD64_AVX512,
-  kArchAMD64_SLEIGH,
-
-  kArchAArch32LittleEndian,
-  kArchAArch64LittleEndian,
-  kArchAArch64LittleEndian_SLEIGH,
-
-  kArchSparc32,
-  kArchSparc64,
-  kArchSparc32_SLEIGH,
-
-  kArchThumb2LittleEndian,
-
-  kArchPPC,
 };
 
 ArchName GetArchName(const llvm::Triple &triple);

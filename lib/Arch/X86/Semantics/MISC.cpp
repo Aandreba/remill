@@ -17,7 +17,9 @@
 #pragma once
 
 // Disable the "loop not unrolled warnings"
-#pragma clang diagnostic ignored "-Wpass-failed"
+#ifdef __clang__
+#  pragma clang diagnostic ignored "-Wpass-failed"
+#endif
 
 namespace {
 
@@ -90,7 +92,7 @@ DEF_SEM(ENTER, I16 src1, I8 src2) {
 
   if (nesting_level) {
     if (1 < nesting_level) {
-      _Pragma("unroll") for (addr_t i = 1; i <= (nesting_level - 1); ++i) {
+      for (addr_t i = 1; i <= (nesting_level - 1); ++i) {
         xbp_temp = USub(xbp_temp, op_size);  // TODO(pag): Handle 67H prefix.
 
         // Copy the display entry to the stack.

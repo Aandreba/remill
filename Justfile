@@ -1,3 +1,5 @@
+set windows-powershell := true
+
 [windows]
 build:
     cmake -E make_directory build

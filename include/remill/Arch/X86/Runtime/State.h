@@ -31,8 +31,10 @@
 //      to bitcode for one architecture, then change its `DataLayout` to
 //      match another architecture.
 
-#pragma clang diagnostic push
-#pragma clang diagnostic fatal "-Wpadded"
+#ifdef __clang__
+#  pragma clang diagnostic push
+#  pragma clang diagnostic fatal "-Wpadded"
+#endif
 
 #include "remill/Arch/Runtime/State.h"
 #include "remill/Arch/Runtime/Types.h"
@@ -78,33 +80,33 @@ enum TableIndicator : uint16_t {
 #  define TableIndicator uint16_t
 #endif
 
-union SegmentSelector final {
+PACK(union SegmentSelector final {
   uint16_t flat;
-  struct {
+  PACK(struct {
     RequestPrivilegeLevel rpi : 2;
     TableIndicator ti : 1;
     uint16_t index : 13;
-  } __attribute__((packed));
-} __attribute__((packed));
+  });
+});
 
 static_assert(sizeof(SegmentSelector) == 2,
               "Invalid packing of `union SegmentSelector`.");
 
-struct SegmentShadow final {
+PACK(struct SegmentShadow final {
   union {
     uint32_t dword;
     uint64_t qword;
   } base;
   uint32_t limit;
   uint32_t flags;
-} __attribute__((packed));
+});
 
 static_assert(sizeof(SegmentShadow) == 16,
               "Invalid packing of `struct SegmentShadow`.");
 
-union FPUStatusWord final {
+PACK(union FPUStatusWord final {
   uint16_t flat;
-  struct {
+  PACK(struct {
     uint16_t ie : 1;  // Invalid operation.
     uint16_t de : 1;  // Denormal operand.
     uint16_t ze : 1;  // Zero divide.
@@ -119,8 +121,8 @@ union FPUStatusWord final {
     uint16_t top : 3;  // Stack pointer.
     uint16_t c3 : 1;  // Part of condition code.
     uint16_t b : 1;  // Busy.
-  } __attribute__((packed));
-} __attribute__((packed));
+  });
+});
 
 static_assert(2 == sizeof(FPUStatusWord),
               "Invalid structure packing of `FPUFlags`.");
@@ -145,19 +147,26 @@ enum FPUInfinityControl : uint16_t {
 };
 
 enum FPUExceptionFlag : uint16_t {
-  kFPUExceptionInvalid   = (1 << 0),  // FSW.ie, bit 0 - Invalid Operation (FE_INVALID)
-  kFPUExceptionDenormal  = (1 << 1),  // FSW.de, bit 1 - Denormal Operand (FE_DENORMAL)
-  kFPUExceptionDivByZero = (1 << 2),  // FSW.ze, bit 2 - Zero Divide (FE_DIVBYZERO)
-  kFPUExceptionOverflow  = (1 << 3),  // FSW.oe, bit 3 - Overflow (FE_OVERFLOW)
-  kFPUExceptionUnderflow = (1 << 4),  // FSW.ue, bit 4 - Underflow (FE_UNDERFLOW)
-  kFPUExceptionPrecision = (1 << 5),  // FSW.pe, bit 5 - Precision/Inexact (FE_INEXACT)
-  kFPUExceptionStackFault = (1 << 6), // FSW.sf, bit 6 - Stack Fault (no FE_ equivalent, x87-specific)
-  kFPUExceptionAll       = 0x7F       // All exception flags (bits 0-6)
+  kFPUExceptionInvalid =
+      (1 << 0),  // FSW.ie, bit 0 - Invalid Operation (FE_INVALID)
+  kFPUExceptionDenormal =
+      (1 << 1),  // FSW.de, bit 1 - Denormal Operand (FE_DENORMAL)
+  kFPUExceptionDivByZero =
+      (1 << 2),  // FSW.ze, bit 2 - Zero Divide (FE_DIVBYZERO)
+  kFPUExceptionOverflow = (1 << 3),  // FSW.oe, bit 3 - Overflow (FE_OVERFLOW)
+  kFPUExceptionUnderflow =
+      (1 << 4),  // FSW.ue, bit 4 - Underflow (FE_UNDERFLOW)
+  kFPUExceptionPrecision =
+      (1 << 5),  // FSW.pe, bit 5 - Precision/Inexact (FE_INEXACT)
+  kFPUExceptionStackFault =
+      (1
+       << 6),  // FSW.sf, bit 6 - Stack Fault (no FE_ equivalent, x87-specific)
+  kFPUExceptionAll = 0x7F  // All exception flags (bits 0-6)
 };
 
-union FPUControlWord final {
+PACK(union FPUControlWord final {
   uint16_t flat;
-  struct {
+  PACK(struct {
     uint16_t im : 1;  // Invalid Operation.
     uint16_t dm : 1;  // Denormalized Operand.
     uint16_t zm : 1;  // Zero Divide.
@@ -169,42 +178,42 @@ union FPUControlWord final {
     FPURoundingControl rc : 2;
     FPUInfinityControl x : 1;
     uint16_t _rsvd1 : 3;
-  } __attribute__((packed));
-} __attribute__((packed));
+  });
+});
 
 static_assert(2 == sizeof(FPUControlWord),
               "Invalid structure packing of `FPUControl`.");
 
-struct FPUStackElem final {
+PACK(struct FPUStackElem final {
   FPUStackElem() {}
-  union {
+  PACK(union {
     float80_t st;
-    struct {
+    PACK(struct {
       uint64_t mmx;
       uint16_t infinity;  // When an MMX register is used, this is all 1s.
-    } __attribute__((packed));
-  } __attribute__((packed));
+    });
+  });
   uint8_t _rsvd[6];
-} __attribute__((packed));
+});
 
-static_assert(0 == __builtin_offsetof(FPUStackElem, st),
+static_assert(0 == offsetof(FPUStackElem, st),
               "Invalid structure packing of `FPUStackElem::st`.");
 
-static_assert(0 == __builtin_offsetof(FPUStackElem, mmx),
+static_assert(0 == offsetof(FPUStackElem, mmx),
               "Invalid structure packing of `FPUStackElem::mmx`.");
 
-static_assert(8 == __builtin_offsetof(FPUStackElem, infinity),
+static_assert(8 == offsetof(FPUStackElem, infinity),
               "Invalid structure packing of `FPUStackElem::st`.");
 
-static_assert(10 == __builtin_offsetof(FPUStackElem, _rsvd[0]),
+static_assert(10 == offsetof(FPUStackElem, _rsvd[0]),
               "Invalid structure packing of `FPUStackElem::st`.");
 
 static_assert(16 == sizeof(FPUStackElem),
               "Invalid structure packing of `FPUStackElem`.");
 
-union FPUControlStatus {
+PACK(union FPUControlStatus {
   uint32_t flat;
-  struct {
+  PACK(struct {
     uint32_t ie : 1;  // Invalid operation.
     uint32_t de : 1;  // Denormal flag.
     uint32_t ze : 1;  // Divide by zero.
@@ -222,8 +231,8 @@ union FPUControlStatus {
     uint32_t rp : 1;  // Round positive.
     uint32_t fz : 1;  // Flush to zero.
     uint32_t _rsvd : 16;
-  } __attribute__((packed));
-} __attribute__((packed));
+  });
+});
 
 static_assert(4 == sizeof(FPUControlStatus),
               "Invalid structure packing of `SSEControlStatus`.");
@@ -243,9 +252,9 @@ enum FPUAbridgedTag : uint8_t { kFPUAbridgedTagEmpty, kFPUAbridgedTagValid };
 #endif
 
 // Note: Stored in top-of-stack order.
-union FPUTagWord final {
+PACK(union FPUTagWord final {
   uint16_t flat;
-  struct {
+  PACK(struct {
     FPUTag tag0 : 2;
     FPUTag tag1 : 2;
     FPUTag tag2 : 2;
@@ -254,16 +263,16 @@ union FPUTagWord final {
     FPUTag tag5 : 2;
     FPUTag tag6 : 2;
     FPUTag tag7 : 2;
-  } __attribute__((packed));
-} __attribute__((packed));
+  });
+});
 
 static_assert(sizeof(FPUTagWord) == 2,
               "Invalid structure packing of `TagWord`.");
 
 // Note: Stored in physical order.
-union FPUAbridgedTagWord final {
+PACK(union FPUAbridgedTagWord final {
   uint8_t flat;
-  struct {
+  PACK(struct {
     FPUAbridgedTag r0 : 1;
     FPUAbridgedTag r1 : 1;
     FPUAbridgedTag r2 : 1;
@@ -272,14 +281,14 @@ union FPUAbridgedTagWord final {
     FPUAbridgedTag r5 : 1;
     FPUAbridgedTag r6 : 1;
     FPUAbridgedTag r7 : 1;
-  } __attribute__((packed));
-} __attribute__((packed));
+  });
+});
 
 static_assert(sizeof(FPUAbridgedTagWord) == 1,
               "Invalid structure packing of `FPUAbridgedTagWord`.");
 
 // FPU register state that conforms with `FSAVE` and `FRSTOR`.
-struct FpuFSAVE {
+PACK(struct FpuFSAVE {
   FPUControlWord cwd;
   uint16_t _rsvd0;
   FPUStatusWord swd;
@@ -293,10 +302,10 @@ struct FpuFSAVE {
   SegmentSelector ds;  // Data segment associated with `dp`.
   uint16_t _rsvd3;
   FPUStackElem st[8];
-} __attribute__((packed));
+});
 
 // FPU register state that conforms with `FXSAVE` and `FXRSTOR`.
-struct FpuFXSAVE {
+PACK(struct FpuFXSAVE {
   FPUControlWord cwd;
   FPUStatusWord swd;
   FPUAbridgedTagWord ftw;
@@ -312,10 +321,10 @@ struct FpuFXSAVE {
   FPUControlStatus mxcsr_mask;
   FPUStackElem st[8];
   vec128_t xmm[16];
-} __attribute__((packed));
+});
 
 // FPU register state that conforms with `FXSAVE64` and `FXRSTOR64`.
-struct FpuFXSAVE64 {
+PACK(struct FpuFXSAVE64 {
   FPUControlWord cwd;
   FPUStatusWord swd;
   FPUAbridgedTagWord ftw;
@@ -327,29 +336,34 @@ struct FpuFXSAVE64 {
   FPUControlStatus mxcsr_mask;
   FPUStackElem st[8];
   vec128_t xmm[16];
-} __attribute__((packed));
+});
 
 // FP register state that conforms with `FXSAVE` and `FXSAVE64`.
-union alignas(16) FPU final {
+PACK(union alignas(16) FPU final {
   FPU() {}
-  struct : public FpuFSAVE {
+
+  // clang-format off
+  PACK(struct : public FpuFSAVE {
     uint8_t _padding0[512 - sizeof(FpuFSAVE)];
-  } __attribute__((packed)) fsave;
+  }) fsave;
 
-  struct : public FpuFXSAVE {
+  // clang-format off
+  PACK(struct : public FpuFXSAVE {
     uint8_t _padding0[512 - sizeof(FpuFXSAVE)];
-  } __attribute__((packed)) fxsave32;
+  }) fxsave32;
 
-  struct : public FpuFXSAVE64 {
+  // clang-format off
+  PACK(struct : public FpuFXSAVE64 {
     uint8_t _padding0[512 - sizeof(FpuFXSAVE64)];
-  } __attribute__((packed)) fxsave64;
-} __attribute__((packed));
+  }) fxsave64;
+
+});
 
 #define fxsave IF_64BIT_ELSE(fxsave64, fxsave32)
 
 static_assert(512 == sizeof(FPU), "Invalid structure packing of `FPU`.");
 
-struct FPUStatusFlags final {
+PACK(struct FPUStatusFlags final {
   uint8_t _0;
   uint8_t c0;
   uint8_t _1;
@@ -378,17 +392,17 @@ struct FPUStatusFlags final {
   uint8_t ie;  // Invalid operation.
 
   uint8_t _10;
-  uint8_t sf; // Stack overflow.
+  uint8_t sf;  // Stack overflow.
 
   uint8_t _padding[2];
-} __attribute__((packed));
+});
 
 static_assert(24 == sizeof(FPUStatusFlags),
               "Invalid packing of `FPUStatusFlags`.");
 
-union alignas(8) Flags final {
+PACK(union alignas(8) Flags final {
   uint64_t flat;
-  struct {
+  PACK(struct {
     uint32_t cf : 1;  // bit 0.
     uint32_t must_be_1 : 1;
     uint32_t pf : 1;
@@ -417,12 +431,12 @@ union alignas(8) Flags final {
     uint32_t id : 1;  // bit 21.
     uint32_t reserved_eflags : 10;  // bits 22-31.
     uint32_t reserved_rflags;  // bits 32-63.
-  } __attribute__((packed));
-} __attribute__((packed));
+  });
+});
 
 static_assert(8 == sizeof(Flags), "Invalid structure packing of `Flags`.");
 
-struct alignas(8) ArithFlags final {
+PACK(struct alignas(8) ArithFlags final {
 
   // Prevents LLVM from casting and `ArithFlags` into an `i8` to access `cf`.
   volatile uint8_t _0;
@@ -441,39 +455,39 @@ struct alignas(8) ArithFlags final {
   uint8_t of;
   volatile uint8_t _7;
   volatile uint8_t _8;
-} __attribute__((packed));
+});
 
 static_assert(16 == sizeof(ArithFlags), "Invalid packing of `ArithFlags`.");
 
-union XCR0 {
+PACK(union XCR0 {
   uint64_t flat;
 
-  struct {
+  PACK(struct {
     uint32_t eax;
     uint32_t edx;
-  } __attribute__((packed));
+  });
 
   // Bits specify what process states should be saved.
-  struct {
+  PACK(struct {
     uint64_t x87_fpu_mmx : 1;  // Must be 1; bit 0.
     uint64_t xmm : 1;  // SSE.
     uint64_t ymm : 1;  // AVX and AVX2.
     uint64_t bndreg : 1;  // Part of MPX.
     uint64_t bndcsr : 1;  // Part of MPX.
     uint64_t opmask : 1;  // Registers k0 through k7, AVX512-only.
-    uint64_t
-        zmm_hi256 : 1;  // High 256 bits of ZMM0 through ZMM15, AVX512-only.
+    uint64_t zmm_hi256
+        : 1;  // High 256 bits of ZMM0 through ZMM15, AVX512-only.
     uint64_t hi16_zmm : 1;  // ZMM16 through ZMM31, AVX512-only.
     uint64_t pkru : 1;  // Protected key stuff.
     uint64_t _reserved0 : 53;
     uint64_t lwp : 1;  // AMD lightweight profiling.
     uint64_t _reserved1 : 1;
-  } __attribute__((packed));
-} __attribute__((packed));
+  });
+});
 
 static_assert(8 == sizeof(XCR0), "Invalid packing of `XCR0`.");
 
-struct alignas(8) Segments final {
+PACK(struct alignas(8) Segments final {
   volatile uint16_t _0;
   SegmentSelector ss;
   volatile uint16_t _1;
@@ -486,18 +500,18 @@ struct alignas(8) Segments final {
   SegmentSelector ds;
   volatile uint16_t _5;
   SegmentSelector cs;
-} __attribute__((packed));
+});
 
 static_assert(24 == sizeof(Segments), "Invalid packing of `struct Segments`.");
 
-struct alignas(8) SegmentCaches final {
+PACK(struct alignas(8) SegmentCaches final {
   SegmentShadow cs;
   SegmentShadow ss;
   SegmentShadow ds;
   SegmentShadow es;
   SegmentShadow fs;
   SegmentShadow gs;
-} __attribute__((packed));
+});
 
 static_assert(96 == sizeof(SegmentCaches),
               "Invalid packing of `struct SegmentCaches`.");
@@ -566,20 +580,20 @@ enum SegmentSystemBit : uint64_t { kSegmentBitSystem, kSegmentBitUser };
 #  define SegmentSystemBit uint64_t
 #endif
 
-struct GenericDescriptor {
+PACK(struct GenericDescriptor {
   uint64_t unused : 44;
   uint64_t sbit : 1;
   uint64_t dpl : 2;
   uint64_t present : 1;
   uint64_t unused3 : 16;
-} __attribute__((packed));
+});
 
 static_assert(8U == sizeof(GenericDescriptor),
               "Invalid packing of `struct GenericDescriptor`.");
 
-union SegmentDescriptor {
+PACK(union SegmentDescriptor {
   uint64_t flat;
-  struct {
+  PACK(struct {
     uint16_t limit_low : 16;
     uint16_t base_low : 16;
     uint16_t base_middle : 8;
@@ -596,13 +610,13 @@ union SegmentDescriptor {
     uint16_t granularity : 1;
 
     uint16_t base_high : 8;
-  } __attribute__((packed));
-} __attribute__((packed));
+  });
+});
 
 static_assert(8U == sizeof(SegmentDescriptor),
               "Invalid packing of `struct SegmentDescriptor`.");
 
-struct GateDescriptor {
+PACK(struct GateDescriptor {
   uint64_t target_offset_low : 16;
   uint64_t target_selector : 16;
   /* Only valid for interrupt gates. */
@@ -611,25 +625,25 @@ struct GateDescriptor {
   uint64_t system_type : 4;
   uint64_t access : 4;
   uint64_t target_offset_middle : 16;
-} __attribute__((packed));
+});
 
 static_assert(8U == sizeof(GateDescriptor),
               "Invalid packing of `struct GateDescriptor`.");
 
-struct ExtensionDescriptor {
+PACK(struct ExtensionDescriptor {
   uint64_t higher_addr : 32;
   uint64_t reserved : 32;
-} __attribute__((packed));
+});
 
 static_assert(8U == sizeof(ExtensionDescriptor),
               "Invalid packing of `struct DescritorExtension`.");
 
-union Descriptor {
+PACK(union Descriptor {
   GenericDescriptor generic;
   SegmentDescriptor segment;
   GateDescriptor gate;
   ExtensionDescriptor extension;
-} __attribute__((packed));
+});
 
 static_assert(8U == sizeof(Descriptor),
               "Invalid packing of `struct SystemDescriptorExtra`.");
@@ -638,8 +652,8 @@ static_assert(8U == sizeof(Descriptor),
 // registers, because then every (bitcasted from 64 bit) store of a 32-bit
 // value will look like a false- dependency on the (bitcasted from 64 bit)
 // full 64-bit quantity.
-struct Reg final {
-  union {
+PACK(struct Reg final {
+  PACK(union {
     alignas(1) struct {
       uint8_t low;
       uint8_t high;
@@ -647,42 +661,42 @@ struct Reg final {
     alignas(2) uint16_t word;
     alignas(4) uint32_t dword;
     IF_64BIT(alignas(8) uint64_t qword;)
-  } __attribute__((packed));
+  });
   IF_32BIT(volatile uint32_t _padding0;)
-} __attribute__((packed));
+});
 
 static_assert(sizeof(uint64_t) == sizeof(Reg), "Invalid packing of `Reg`.");
 
-static_assert(0 == __builtin_offsetof(Reg, byte.low),
+static_assert(0 == offsetof(Reg, byte.low),
               "Invalid packing of `Reg::low`.");
-static_assert(1 == __builtin_offsetof(Reg, byte.high),
+static_assert(1 == offsetof(Reg, byte.high),
               "Invalid packing of `Reg::high`.");
-static_assert(0 == __builtin_offsetof(Reg, word),
+static_assert(0 == offsetof(Reg, word),
               "Invalid packing of `Reg::word`.");
-static_assert(0 == __builtin_offsetof(Reg, dword),
+static_assert(0 == offsetof(Reg, dword),
               "Invalid packing of `Reg::dword`.");
-IF_64BIT(static_assert(0 == __builtin_offsetof(Reg, qword),
+IF_64BIT(static_assert(0 == offsetof(Reg, qword),
                        "Invalid packing of `Reg::qword`.");)
 
-union alignas(16) VectorReg final {
+PACK(union alignas(16) VectorReg final {
   alignas(16) vec128_t xmm;
   alignas(16) vec256_t ymm;
   alignas(16) vec512_t zmm;
-} __attribute__((packed));
+});
 
-static_assert(0 == __builtin_offsetof(VectorReg, xmm),
+static_assert(0 == offsetof(VectorReg, xmm),
               "Invalid packing of `VectorReg::xmm`.");
 
-static_assert(0 == __builtin_offsetof(VectorReg, ymm),
+static_assert(0 == offsetof(VectorReg, ymm),
               "Invalid packing of `VectorReg::ymm`.");
 
-static_assert(0 == __builtin_offsetof(VectorReg, zmm),
+static_assert(0 == offsetof(VectorReg, zmm),
               "Invalid packing of `VectorReg::zmm`.");
 
 static_assert(64 == sizeof(VectorReg),
               "Invalid packing of `struct VectorReg`.");
 
-struct alignas(8) AddressSpace final {
+PACK(struct alignas(8) AddressSpace final {
   volatile uint64_t _0;
   Reg ss_base;
   volatile uint64_t _1;
@@ -695,7 +709,7 @@ struct alignas(8) AddressSpace final {
   Reg ds_base;
   volatile uint64_t _5;
   Reg cs_base;
-} __attribute__((packed));
+});
 
 static_assert(96 == sizeof(AddressSpace),
               "Invalid packing of `struct AddressSpace`.");
@@ -703,7 +717,7 @@ static_assert(96 == sizeof(AddressSpace),
 // Named the same way as the 64-bit version to keep names the same
 // across architectures. All registers are here, even the 64-bit ones. The
 // 64-bit ones are not used in lifted 32-bit code.
-struct alignas(8) GPR final {
+PACK(struct alignas(8) GPR final {
 
   // Prevents LLVM from casting a `GPR` into an `i64` to access `rax`.
   volatile uint64_t _0;
@@ -742,16 +756,16 @@ struct alignas(8) GPR final {
 
   // Program counter of the CURRENT instruction!
   Reg rip;
-} __attribute__((packed));
+});
 
 static_assert(272 == sizeof(GPR), "Invalid structure packing of `GPR`.");
 
 // Declare val as float80_t
 struct alignas(16) X87Stack final {
-  struct alignas(16) {
+  PACK(struct alignas(16) {
     uint8_t _[6];
     float80_t val;
-  } __attribute__((packed)) elems[8];
+  }) elems[8];
 };
 
 
@@ -759,24 +773,24 @@ static_assert(128 == sizeof(X87Stack),
               "Invalid structure packing of `X87Stack`.");
 
 struct alignas(8) MMX final {
-  struct alignas(8) {
+  PACK(struct alignas(8) {
     uint64_t _0;
     vec64_t val;
-  } __attribute__((packed)) elems[8];
+  }) elems[8];
 };
 
 struct alignas(8) K_REG final {
-  struct alignas(8) {
+  PACK(struct alignas(8) {
     uint64_t _0;
     uint64_t val;
-  } __attribute__((packed)) elems[8];
+  }) elems[8];
 };
 
 static_assert(128 == sizeof(MMX), "Invalid structure packing of `MMX`.");
 
 enum : size_t { kNumVecRegisters = 32 };
 
-struct alignas(16) X86State : public ArchState {
+PACK(struct alignas(16) X86State : public ArchState {
 
   // ArchState occupies 16 bytes.
 
@@ -797,17 +811,17 @@ struct alignas(16) X86State : public ArchState {
   XCR0 xcr0;  // 8 bytes.
   FPU x87;  // 512 bytes
   SegmentCaches seg_caches;  // 96 bytes
-  K_REG k_reg; // 128 bytes.
-} __attribute__((packed));
+  K_REG k_reg;  // 128 bytes.
+});
 
 static_assert((96 + 3264 + 16 + 128) == sizeof(X86State),
               "Invalid packing of `struct State`");
 
 struct State : public X86State {};
 
-union CR0Reg {
+PACK(union CR0Reg {
   uint64_t flat;
-  struct {
+  PACK(struct {
     uint64_t pe : 1;
     uint64_t mp : 1;
     uint64_t em : 1;
@@ -823,40 +837,40 @@ union CR0Reg {
     uint64_t cd : 1;
     uint64_t pg : 1;
     uint64_t _rsvd3 : 32;
-  } __attribute__((packed));
-} __attribute__((packed));
+  });
+});
 
 static_assert(8 == sizeof(CR0Reg), "Invalid packing of CR0Reg");
 
-union CR1Reg {
+PACK(union CR1Reg {
   uint64_t flat;
-} __attribute__((packed));
+});
 
 static_assert(8 == sizeof(CR1Reg), "Invalid packing of CR1Reg");
 
-union CR2Reg {
+PACK(union CR2Reg {
   uint64_t flat;
   addr_t linear_address;
-} __attribute__((packed));
+});
 
 static_assert(8 == sizeof(CR2Reg), "Invalid packing of CR2Reg");
 
-union CR3Reg {
+PACK(union CR3Reg {
   uint64_t flat;
-  struct {
+  PACK(struct {
     uint64_t _rsvd0 : 3;
     uint64_t pwt : 1;
     uint64_t pcd : 1;
     uint64_t _rsvd1 : 7;
     uint64_t page_dir_base : 52;
-  } __attribute__((packed));
-} __attribute__((packed));
+  });
+});
 
 static_assert(8 == sizeof(CR3Reg), "Invalid packing of CR3Reg");
 
-union CR4Reg {
+PACK(union CR4Reg {
   uint64_t flat;
-  struct {
+  PACK(struct {
     uint64_t vme : 1;
     uint64_t pvi : 1;
     uint64_t tsd : 1;
@@ -882,19 +896,21 @@ union CR4Reg {
     uint64_t pke : 1;
     uint64_t _rsvd3 : 9;
     uint64_t _rsvd4 : 32;
-  } __attribute__((packed));
-} __attribute__((packed));
+  });
+});
 
 static_assert(8 == sizeof(CR4Reg), "Invalid packing of CR4Reg");
 
-union CR8Reg {
+PACK(union CR8Reg {
   uint64_t flat;
-  struct {
+  PACK(struct {
     uint64_t tpr : 4;
     uint64_t _rsvd0 : 60;
-  } __attribute__((packed));
-} __attribute__((packed));
+  });
+});
 
 static_assert(8 == sizeof(CR8Reg), "Invalid packing of CR8Reg");
 
-#pragma clang diagnostic pop
+#ifdef __clang__
+#  pragma clang diagnostic pop
+#endif

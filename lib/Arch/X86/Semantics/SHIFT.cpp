@@ -342,7 +342,7 @@ DEF_SEM(PSLLDQ, D dst, V128 src1, I8 src2) {
   uint8v16_t src1_vec = UReadV8(src1);
   uint8v16_t dst_vec = {};
   size_t shift_amount = std::min<size_t>(ZExtTo<size_t>(Read(src2)), 16);
-  _Pragma("unroll") for (size_t i = 0; i < 16; ++i) {
+  for (size_t i = 0; i < 16; ++i) {
     if (i < (16 - shift_amount)) {
       dst_vec = UInsertV8(dst_vec, i + shift_amount, UExtractV8(src1_vec, i));
     }
@@ -358,7 +358,7 @@ DEF_SEM(VPSLLDQ, D dst, V256 src1, I8 src2) {
   uint8v32_t dst_vec = {};
   size_t shift_amount = std::min<size_t>(ZExtTo<size_t>(Read(src2)), 16);
 
-  _Pragma("unroll") for (size_t i = 0, j = 16; i < 16; ++i, ++j) {
+  for (size_t i = 0, j = 16; i < 16; ++i, ++j) {
     if (i < (16 - shift_amount)) {
       dst_vec = UInsertV8(dst_vec, i + shift_amount, UExtractV8(src1_vec, i));
       dst_vec = UInsertV8(dst_vec, j + shift_amount, UExtractV8(src1_vec, j));

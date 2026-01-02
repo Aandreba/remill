@@ -17,17 +17,23 @@
 #pragma once
 
 // clang-format off
+#ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic ignored "-Wconversion"
 #pragma clang diagnostic ignored "-Wold-style-cast"
 #pragma clang diagnostic ignored "-Wdocumentation"
 #pragma clang diagnostic ignored "-Wswitch-enum"
+#endif
+
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Constants.h>
+
+#ifdef __clang__
 #pragma clang diagnostic pop
+#endif
 
 // clang-format on
 

@@ -22,8 +22,10 @@
 
 extern "C" {
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-variable"
+#ifdef __clang__
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wunused-variable"
+#endif
 
 // Debug registers.
 extern uint64_t DR0;
@@ -43,6 +45,8 @@ extern CR3Reg CR3;
 extern CR4Reg CR4;
 extern CR8Reg CR8;
 
-#pragma clang diagnostic pop
+#ifdef __clang__
+#  pragma clang diagnostic pop
+#endif
 
 }  // extern C

@@ -16,9 +16,10 @@
 
 #pragma once
 
+#include "Definitions.h"
 #include "Int.h"
 
-class SyncHyperCall {
+PACK(class SyncHyperCall {
  public:
   enum Name : uint32_t {
     kInvalid,
@@ -97,9 +98,9 @@ class SyncHyperCall {
     kPPCEmulateInstruction,
     kPPCSysCall,
   };
-} __attribute__((packed));
+});
 
-class AsyncHyperCall {
+PACK(class AsyncHyperCall {
  public:
   enum Name : uint32_t {
     kInvalid,
@@ -151,4 +152,4 @@ class AsyncHyperCall {
     // Invalid instruction.
     kInvalidInstruction
   };
-} __attribute__((packed));
+});

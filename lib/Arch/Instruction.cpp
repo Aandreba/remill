@@ -491,8 +491,7 @@ Operand &Instruction::EmplaceOperand(const Operand::ShiftRegister &shift_op) {
       // to shift a register value into the carry out operands.
       // for example: andseq r3, sl, r0, lsr #32
       CHECK(shift_size < op.size ||
-            (shift_size <= op.size && arch_name == kArchAArch32LittleEndian &&
-             shift_op.can_shift_op_size))
+            (shift_size <= op.size && false && shift_op.can_shift_op_size))
           << "Shift of size " << shift_size
           << " is wider than the base register size in shift register in "
           << Serialize();
@@ -659,20 +658,10 @@ std::string Instruction::Serialize(void) const {
       case kArchInvalid: ss << "INVALID"; break;
       case kArchAMD64:
       case kArchAMD64_AVX:
-      case kArchAMD64_AVX512:
-      case kArchAMD64_SLEIGH: ss << "AMD64"; break;
+      case kArchAMD64_AVX512: ss << "AMD64"; break;
       case kArchX86:
       case kArchX86_AVX:
-      case kArchX86_AVX512:
-      case kArchX86_SLEIGH: ss << "X86"; break;
-      case kArchThumb2LittleEndian: ss << "Thumb2"; break;
-      case kArchAArch32LittleEndian: ss << "AArch32"; break;
-      case kArchAArch64LittleEndian_SLEIGH:
-      case kArchAArch64LittleEndian: ss << "AArch64"; break;
-      case kArchSparc32_SLEIGH:
-      case kArchSparc32: ss << "SPARC32"; break;
-      case kArchSparc64: ss << "SPARC64"; break;
-      case kArchPPC: ss << "PowerPC"; break;
+      case kArchX86_AVX512: ss << "X86"; break;
     }
   };
 
@@ -692,7 +681,6 @@ std::string Instruction::Serialize(void) const {
       case kArchAMD64_AVX512: ss << ":AVX512"; break;
       case kArchX86_AVX: ss << ":AVX"; break;
       case kArchX86_AVX512: ss << ":AVX512"; break;
-      case kArchThumb2LittleEndian: ss << ":Thumb2"; break;
     }
   }
 

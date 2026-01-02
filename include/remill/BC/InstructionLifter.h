@@ -18,8 +18,8 @@
 
 #include <cstdint>
 #include <memory>
-#include <string_view>
 #include <string>
+#include <string_view>
 
 namespace llvm {
 class Argument;

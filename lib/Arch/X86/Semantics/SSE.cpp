@@ -17,7 +17,9 @@
 #pragma once
 
 // Disable the "loop not unrolled warnings"
-#pragma clang diagnostic ignored "-Wpass-failed"
+#ifdef __clang__
+#  pragma clang diagnostic ignored "-Wpass-failed"
+#endif
 
 namespace {
 
@@ -220,7 +222,7 @@ DEF_SEM(SHUFPS, D dst, S1 src1, S2 src2, I8 src3) {
   auto imm = Read(src3);
   auto num_groups = NumVectorElems(dst_vec);
 
-  _Pragma("unroll") for (std::size_t i = 0; i < num_groups; ++i) {
+  for (std::size_t i = 0; i < num_groups; ++i) {
     auto order = UShr8(imm, TruncTo<uint8_t>(i * 2));
     auto sel = UAnd8(order, 0x3_u8);
     auto sel_val = UExtractV32(Select(i < 2, src1_vec, src2_vec), sel);
@@ -247,7 +249,7 @@ DEF_SEM(SHUFPD, D dst, S1 src1, S2 src2, I8 src3) {
   auto imm = Read(src3);
   auto num_groups = NumVectorElems(src1_vec);
 
-  _Pragma("unroll") for (std::size_t i = 0; i < num_groups; i += 2) {
+  for (std::size_t i = 0; i < num_groups; i += 2) {
     auto order = UShr8(imm, TruncTo<uint8_t>(i));
     auto sel1 = UAnd8(order, 0x1_u8);
     auto sel2 = Select(UAnd8(order, 0x2_u8) == 0x2_u8, 1_u8, 0_u8);
@@ -273,11 +275,11 @@ DEF_SEM(PSHUFD, D dst, S1 src1, I8 src2) {
   auto src_vec = UReadV128(src1);
   auto num_groups = NumVectorElems(src_vec);
 
-  _Pragma("unroll") for (std::size_t i = 0, k = 0; i < num_groups; ++i) {
+  for (std::size_t i = 0, k = 0; i < num_groups; ++i) {
     auto group = UExtractV128(src_vec, i);
     auto order = Read(src2);
 
-    _Pragma("unroll") for (std::size_t j = 0; j < 4; ++j, ++k) {
+    for (std::size_t j = 0; j < 4; ++j, ++k) {
       auto sel = UAnd(order, 0x3_u8);
       auto shift = UMul(sel, 32_u8);
       order = UShr(order, 2_u8);
@@ -323,16 +325,16 @@ DEF_SEM(PSHUFLW, D dst, S1 src1, I8 src2) {
   // The same operation is done for each 128-bit "lane" of src1:
   auto num_lanes = NumVectorElems(UReadV128(src1));
 
-  _Pragma("unroll") for (std::size_t lane_index = 0, word_index = 0;
-                         lane_index < num_lanes; ++lane_index) {
+  for (std::size_t lane_index = 0, word_index = 0; lane_index < num_lanes;
+       ++lane_index) {
     auto lane = UExtractV128(src_vec, lane_index);
 
     // Words will be shuffled in the order specified in a code in src2:
     auto order = Read(src2);
 
     // Shuffle the 4 words from the low 64-bits of the 128-bit lane:
-    _Pragma("unroll") for (std::size_t word_count = 0; word_count < 4;
-                           ++word_count, ++word_index) {
+    for (std::size_t word_count = 0; word_count < 4;
+         ++word_count, ++word_index) {
       auto sel = UAnd(order, 0x3_u8);
       auto shift = UMul(sel, 16_u8);
       order = UShr(order, 2_u8);
@@ -342,8 +344,8 @@ DEF_SEM(PSHUFLW, D dst, S1 src1, I8 src2) {
 
     // After shuffling the low 64-bits, the high 64-bits of the src1 lane is
     // copied to the high quadword of the corresponding destination lane:
-    _Pragma("unroll") for (std::size_t word_count = 0; word_count < 4;
-                           ++word_count, ++word_index) {
+    for (std::size_t word_count = 0; word_count < 4;
+         ++word_count, ++word_index) {
       dst_vec = UInsertV16(dst_vec, word_index,
                            UExtractV16(src_words_vec, word_index));
     }
@@ -360,7 +362,7 @@ DEF_SEM(PSHUFHW, D dst, S1 src1, I8 src2) {
   auto imm = Read(src2);
   auto num_groups = NumVectorElems(src_vec);
 
-  _Pragma("unroll") for (std::size_t i = 4; i < num_groups; ++i) {
+  for (std::size_t i = 4; i < num_groups; ++i) {
     auto order = UShr8(imm, TruncTo<uint8_t>((i - 4) * 2_u8));
     auto sel = UAnd8(order, 0x3_u8);
     auto sel_val = UExtractV16(src_vec, sel + 4);
@@ -399,7 +401,7 @@ namespace {
     auto src2_vec = SReadV##size(src2); \
     auto dst_vec = SClearV##size(SReadV##size(dst)); \
     auto num_elems = NumVectorElems(src1_vec); \
-    _Pragma("unroll") for (std::size_t i = 0; i < num_elems; ++i) { \
+    for (std::size_t i = 0; i < num_elems; ++i) { \
       auto src1_elem = SExtractV##size(src1_vec, i); \
       auto src2_elem = SExtractV##size(src2_vec, i); \
       auto res = Select<int##size##_t>(op(src1_elem, src2_elem), -1_s##size, \
@@ -564,7 +566,7 @@ DEF_SEM(CMPPS, D dst, S1 src1, S2 src2, I8 src3) {
   }
 
   auto vec_count = NumVectorElems(src2_vec);
-  _Pragma("unroll") for (std::size_t i = 0; i < vec_count; i++) {
+  for (std::size_t i = 0; i < vec_count; i++) {
     auto v1 = FExtractV32(src1_vec, i);
     auto v2 = FExtractV32(src2_vec, i);
 
@@ -589,7 +591,7 @@ DEF_SEM(CMPPD, D dst, S1 src1, S2 src2, I8 src3) {
   }
 
   auto vec_count = NumVectorElems(src2_vec);
-  _Pragma("unroll") for (std::size_t i = 0; i < vec_count; i++) {
+  for (std::size_t i = 0; i < vec_count; i++) {
     auto v1 = FExtractV64(src1_vec, i);
     auto v2 = FExtractV64(src2_vec, i);
 
@@ -695,7 +697,7 @@ AggregateEqualAny(const BitMatrix<num_elems, num_elems> &bool_res,
   uint16_t bit = 1;
   for (size_t j = 0; j < src2_len; ++j, bit <<= 1) {
 
-    _Pragma("unroll") for (size_t i = 0; i < src1_len; ++i) {
+    for (size_t i = 0; i < src1_len; ++i) {
       if (bool_res.Test(i, j)) {
         int_res_1 |= bit;
         break;  // src2_j is in src1, at position src1_i.
@@ -717,7 +719,7 @@ AggregateRanges(const BitMatrix<num_elems, num_elems> &bool_res,
 
   for (size_t j = 0; j < src2_len; ++j, bit <<= 1) {
 
-    _Pragma("unroll") for (size_t i = 0; i < (src1_len - 1); i += 2) {
+    for (size_t i = 0; i < (src1_len - 1); i += 2) {
       const auto geq_lower_bound = bool_res.Test(i, j);
       const auto leq_upper_bound = bool_res.Test(i + 1, j);
       if (geq_lower_bound && leq_upper_bound) {
@@ -737,7 +739,7 @@ AggregateEqualEach(const BitMatrix<num_elems, num_elems> &bool_res,
   uint16_t int_res_1 = 0;
   uint16_t bit = 1;
 
-  _Pragma("unroll") for (size_t i = 0; i < num_elems; ++i, bit <<= 1) {
+  for (size_t i = 0; i < num_elems; ++i, bit <<= 1) {
     const bool in_str1 = i < src1_len;
     const bool in_str2 = i < src2_len;
     if (in_str1 && in_str2) {
@@ -766,8 +768,7 @@ AggregateEqualOrdered(const BitMatrix<num_elems, num_elems> &bool_res,
 
   for (size_t j = 0; j < num_elems; ++j, bit <<= 1) {
 
-    _Pragma("unroll") for (size_t i = 0, k = j;
-                           i < (num_elems - j) && k < num_elems; ++i, ++k) {
+    for (size_t i = 0, k = j; i < (num_elems - j) && k < num_elems; ++i, ++k) {
       auto needle_valid = i < src1_len;
       auto haystack_valid = k < src2_len;
 
@@ -797,7 +798,7 @@ DEF_SEM(DoPCMPISTRI, const V &src1, const V &src2,
   const auto output_selection =
       static_cast<OutputSelection>(control.output_selection);
 
-  _Pragma("unroll") for (size_t i = 0; i < num_elems; ++i) {
+  for (size_t i = 0; i < num_elems; ++i) {
     if (!src1.elems[i]) {
       src1_len = std::min<size_t>(src1_len, i);
     }
@@ -809,7 +810,7 @@ DEF_SEM(DoPCMPISTRI, const V &src1, const V &src2,
   for (size_t n = 0; n < num_elems; ++n) {
     const auto reg = src1.elems[n];
 
-    _Pragma("unroll") for (size_t m = 0; m < num_elems; ++m) {
+    for (size_t m = 0; m < num_elems; ++m) {
       const auto reg_mem = src2.elems[m];
 
       switch (agg_operation) {
@@ -856,7 +857,7 @@ DEF_SEM(DoPCMPISTRI, const V &src1, const V &src2,
     case kMaskedPositive: int_res_2 = int_res_1; break;
     case kMaskedNegative:
       int_res_2 = int_res_1;
-      _Pragma("unroll") for (size_t i = 0; i < num_elems; ++i) {
+      for (size_t i = 0; i < num_elems; ++i) {
         auto mask = static_cast<uint16_t>(1_u16 << i);
         if (i < src2_len) {
           int_res_2 ^= mask;
@@ -924,7 +925,7 @@ DEF_SEM(PSRLDQ, D dst, S src1, I8 src2) {
   auto vec = UReadV8(src1);
   auto new_vec = UClearV8(UReadV8(dst));
   auto shift = std::min<size_t>(Read(src2), 16);
-  _Pragma("unroll") for (size_t i = shift, j = 0; i < 16; ++i, ++j) {
+  for (size_t i = shift, j = 0; i < 16; ++i, ++j) {
     new_vec = UInsertV8(new_vec, j, UExtractV8(vec, i));
   }
   UWriteV8(dst, new_vec);
@@ -938,7 +939,7 @@ DEF_SEM(VPSRLDQ, D dst, S src1, I8 src2) {
   auto vec = UReadV8(src1);
   auto new_vec = UClearV8(UReadV8(dst));
   auto shift = std::min<size_t>(Read(src2), 16);
-  _Pragma("unroll") for (size_t i = shift, j = 0; i < 16; ++i, ++j) {
+  for (size_t i = shift, j = 0; i < 16; ++i, ++j) {
     new_vec = UInsertV8(new_vec, j, UExtractV8(vec, i));
     new_vec = UInsertV8(new_vec, j + 16, UExtractV8(vec, i + 16));
   }
@@ -1390,7 +1391,7 @@ DEF_SEM(MINPS, D dst, S1 src1, S2 src2) {
   auto src2_vec = FReadV32(src2);
 
   auto vec_count = NumVectorElems(src2_vec);
-  _Pragma("unroll") for (std::size_t i = 0; i < vec_count; i++) {
+  for (std::size_t i = 0; i < vec_count; i++) {
     auto v1 = FExtractV32(dest_vec, i);
     auto v2 = FExtractV32(src2_vec, i);
 
@@ -1421,7 +1422,7 @@ DEF_SEM(MAXPS, D dst, S1 src1, S2 src2) {
   auto src2_vec = FReadV32(src2);
 
   auto vec_count = NumVectorElems(src2_vec);
-  _Pragma("unroll") for (std::size_t i = 0; i < vec_count; i++) {
+  for (std::size_t i = 0; i < vec_count; i++) {
     auto v1 = FExtractV32(dest_vec, i);
     auto v2 = FExtractV32(src2_vec, i);
 
@@ -1608,8 +1609,7 @@ namespace {
     auto tmp_vec = FClearV64(FReadV64(dst)); \
 \
     /* "Move and duplicate" QWORD src[63:0] into dest[63:0] and into dest[127:64]:*/ \
-    _Pragma("unroll") for (auto idx = 0u; idx < num_src_elements * 2; \
-                           idx += 2) { \
+    for (auto idx = 0u; idx < num_src_elements * 2; idx += 2) { \
       auto src_float = FExtractV64(src_vec, idx); \
       tmp_vec = FInsertV64(tmp_vec, idx, src_float); \
       tmp_vec = FInsertV64(tmp_vec, idx + 1, src_float); \
@@ -1651,7 +1651,7 @@ namespace {
     auto src_vec = FReadV32(src); \
     auto dst_vec = FClearV32(FReadV32(dst)); \
     auto vector_count = NumVectorElems(src_vec); \
-    _Pragma("unroll") for (auto idx = 0u; idx < vector_count; idx += 2) { \
+    for (auto idx = 0u; idx < vector_count; idx += 2) { \
       auto src_float = FExtractV32(src_vec, idx + src_idx); \
       dst_vec = FInsertV32(dst_vec, idx, src_float); \
       dst_vec = FInsertV32(dst_vec, idx + 1, src_float); \
@@ -1861,7 +1861,7 @@ DEF_SEM(PACKUSWB, D dst, S1 src1, S2 src2) {
   const auto num_elems = NumVectorElems(packed);
   const auto half_num_elems = num_elems / 2UL;
 
-  _Pragma("unroll") for (size_t i = 0; i < half_num_elems; ++i) {
+  for (size_t i = 0; i < half_num_elems; ++i) {
     auto val = SExtractV16(src1_vec, i);
     auto sat = std::max<int16_t>(std::min<int16_t>(val, 255), 0);
     packed.elems[i] = static_cast<uint8_t>(sat);
@@ -1887,7 +1887,7 @@ DEF_SEM(PACKUSWB_AVX, D dst, S1 src1, S2 src2) {
   const auto half_num_elems = num_elems / 2UL;
   const auto quarter_num_elems = num_elems / 4UL;
 
-  _Pragma("unroll") for (size_t i = 0; i < quarter_num_elems; ++i) {
+  for (size_t i = 0; i < quarter_num_elems; ++i) {
     auto val = SExtractV16(src1_vec, i);
     auto sat = std::max<int16_t>(std::min<int16_t>(val, 255), 0);
     packed.elems[i] = static_cast<uint8_t>(sat);
@@ -1943,15 +1943,14 @@ DEF_SEM(HADDPS, D dst, S1 src1, S2 src2) {
     // The upper half of lhs_vec will be inserted into dst_vec after the lower half of rhs_vec
     tmp_vec_count /= 2;
   }
-  _Pragma("unroll") for (size_t index = 0; index < vec_count; index += 2) {
+  for (size_t index = 0; index < vec_count; index += 2) {
     auto v1 = FExtractV32(lhs_vec, index);
     auto v2 = FExtractV32(lhs_vec, index + 1);
     auto off = Select(index < tmp_vec_count, 0, 2);
     auto i = UAdd(UDiv(UInt32(index), UInt32(2)), UInt32(off));
     dst_vec = FInsertV32(dst_vec, i, FAdd(v1, v2));
   }
-  _Pragma("unroll") for (size_t index = 0; index < NumVectorElems(rhs_vec);
-                         index += 2) {
+  for (size_t index = 0; index < NumVectorElems(rhs_vec); index += 2) {
     auto v1 = FExtractV32(rhs_vec, index);
     auto v2 = FExtractV32(rhs_vec, index + 1);
     auto off = Select(index < tmp_vec_count, tmp_vec_count, vec_count);
@@ -1980,14 +1979,14 @@ DEF_SEM(HADDPD, D dst, S1 src1, S2 src2) {
     tmp_vec_count /= 2;
   }
   // Compute the horizontal packing
-  _Pragma("unroll") for (size_t index = 0; index < vec_count; index += 2) {
+  for (size_t index = 0; index < vec_count; index += 2) {
     auto v1 = FExtractV64(lhs_vec, index);
     auto v2 = FExtractV64(lhs_vec, index + 1);
     auto off = Select(index < tmp_vec_count, 0, 1);
     auto i = UAdd(UDiv(UInt32(index), UInt32(2)), UInt32(off));
     dst_vec = FInsertV64(dst_vec, i, FAdd(v1, v2));
   }
-  _Pragma("unroll") for (size_t index = 0; index < vec_count; index += 2) {
+  for (size_t index = 0; index < vec_count; index += 2) {
     auto v1 = FExtractV64(rhs_vec, index);
     auto v2 = FExtractV64(rhs_vec, index + 1);
     auto off = Select(index < tmp_vec_count, tmp_vec_count, vec_count);
@@ -2131,7 +2130,7 @@ namespace {
   DEF_SEM(prefix##PMOVSX##suffix, D dst, S src) { \
     auto src_vec = SReadV##sWidth(src); \
     auto dst_vec = SClearV##dWidth(SReadV##dWidth(dst)); \
-    _Pragma("unroll") for (auto i = 0u; i < elementNum; i++) { \
+    for (auto i = 0u; i < elementNum; i++) { \
       auto v = SExtTo<int##dWidth##_t, int##sWidth##_t>( \
           SExtractV##sWidth(src_vec, i)); \
       dst_vec = SInsertV##dWidth(dst_vec, i, v); \
@@ -2209,7 +2208,7 @@ namespace {
   DEF_SEM(prefix##PMOVZX##suffix, D dst, S src) { \
     auto src_vec = SReadV##sWidth(src); \
     auto dst_vec = UClearV##dWidth(UReadV##dWidth(dst)); \
-    _Pragma("unroll") for (auto i = 0u; i < elementNum; i++) { \
+    for (auto i = 0u; i < elementNum; i++) { \
       auto v = ZExtTo<int##dWidth##_t, int##sWidth##_t>( \
           SExtractV##sWidth(src_vec, i)); \
       dst_vec = UInsertV##dWidth(dst_vec, i, v); \
@@ -2291,7 +2290,7 @@ namespace {
 \
     auto num_elements = NumVectorElems(src1_vec); \
 \
-    _Pragma("unroll") for (auto idx = 0u; idx < num_elements; ++idx) { \
+    for (auto idx = 0u; idx < num_elements; ++idx) { \
       auto src1_val = FExtractV##element_width(src1_vec, idx); \
       auto src2_val = FExtractV##element_width(src2_vec, idx); \
       auto op_val = \

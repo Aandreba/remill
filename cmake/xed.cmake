@@ -1,3 +1,4 @@
+include(ExternalProject)
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 message(STATUS "Python3: ${Python3_EXECUTABLE}")
 
@@ -101,6 +102,7 @@ message(STATUS "XED IDL Lib Path: ${xed_ild_path}")
 add_library(XED INTERFACE)
 target_link_libraries(XED INTERFACE ${xed_xed_path} ${xed_ild_path})
 target_include_directories(XED INTERFACE ${xed_include_path})
+add_library(XED::XED ALIAS XED)
 
 # TODO: generate XEDVersion.cmake as well file
 # configure_file("${CMAKE_CURRENT_SOURCE_DIR}/XEDConfig.cmake.in" "${CMAKE_INSTALL_PREFIX}/lib/cmake/XED/XEDConfig.cmake" @ONLY)

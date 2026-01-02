@@ -30,8 +30,6 @@ add_library(remill_bc STATIC
   IntrinsicTable.cpp
   Optimizer.cpp
   TraceLifter.cpp
-  SleighLifter.cpp
-  PcodeCFG.cpp
   Util.cpp
 )
 

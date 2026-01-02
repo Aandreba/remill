@@ -17,12 +17,14 @@
 #pragma once
 
 // clang-format off
+#ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wsign-conversion"
 #pragma clang diagnostic ignored "-Wconversion"
 #pragma clang diagnostic ignored "-Wold-style-cast"
 #pragma clang diagnostic ignored "-Wdocumentation"
 #pragma clang diagnostic ignored "-Wswitch-enum"
+#endif
 
 #include <llvm/ADT/SmallVector.h>
 #if LLVM_VERSION_MAJOR < 16
@@ -36,7 +38,9 @@
 #include <remill/BC/IntrinsicTable.h>
 #include <remill/Arch/Context.h>
 
+#ifdef __clang__
 #pragma clang diagnostic pop
+#endif
 
 // clang-format on
 
@@ -357,11 +361,6 @@ class Arch {
 
   bool IsX86(void) const;
   bool IsAMD64(void) const;
-  bool IsAArch32(void) const;
-  bool IsAArch64(void) const;
-  bool IsSPARC32(void) const;
-  bool IsSPARC64(void) const;
-  bool IsPPC(void) const;
 
   bool IsWindows(void) const;
   bool IsLinux(void) const;
@@ -444,7 +443,7 @@ class Arch {
 
   // Defined in `lib/Arch/SPARC32/Arch.cpp`.
   static ArchPtr GetSPARC32(llvm::LLVMContext *context, OSName os,
-                          ArchName arch_name);
+                            ArchName arch_name);
 
   // Defined in `lib/Arch/SPARC64/Arch.cpp`.
   static ArchPtr GetSPARC64(llvm::LLVMContext *context, OSName os,
@@ -452,7 +451,7 @@ class Arch {
 
   // Defined in `lib/Arch/Sleigh/SPARC32/SPARC32Arch.cpp
   static ArchPtr GetSPARC32Sleigh(llvm::LLVMContext *context, OSName os,
-                                ArchName arch_name);
+                                  ArchName arch_name);
 
   // Defined in `lib/Arch/Sleigh/SPARC64/SPARC64.cpp
   static ArchPtr GetSPARC64Sleigh(llvm::LLVMContext *context, OSName os,

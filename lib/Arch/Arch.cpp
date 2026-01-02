@@ -51,20 +51,10 @@ static unsigned AddressSize(ArchName arch_name) {
       return 0;
     case kArchX86:
     case kArchX86_AVX:
-    case kArchX86_AVX512:
-    case kArchX86_SLEIGH:
-    case kArchAArch32LittleEndian:
-    case kArchThumb2LittleEndian:
-    case kArchSparc32:
-    case kArchSparc32_SLEIGH:
-    case kArchPPC: return 32;
+    case kArchX86_AVX512: return 32;
     case kArchAMD64:
     case kArchAMD64_AVX:
-    case kArchAMD64_AVX512:
-    case kArchAMD64_SLEIGH:
-    case kArchAArch64LittleEndian:
-    case kArchAArch64LittleEndian_SLEIGH:
-    case kArchSparc64: return 64;
+    case kArchAMD64_AVX512: return 64;
   }
   return 0;
 }
@@ -108,16 +98,7 @@ static std::mutex gSleighArchLock;
 // using SLEIGH-backed architectures, it can be necessary to acquire this
 // lock.
 ArchLocker Arch::Lock(ArchName arch_name_) {
-  switch (arch_name_) {
-    case ArchName::kArchAArch32LittleEndian:
-    case ArchName::kArchThumb2LittleEndian:
-    case ArchName::kArchAArch64LittleEndian_SLEIGH:
-    case ArchName::kArchAMD64_SLEIGH:
-    case ArchName::kArchX86_SLEIGH:
-    case ArchName::kArchSparc32_SLEIGH:
-    case ArchName::kArchPPC: return &gSleighArchLock;
-    default: return ArchLocker();
-  }
+  return ArchLocker();
 }
 
 llvm::Triple Arch::BasicTriple(void) const {
@@ -164,41 +145,9 @@ auto Arch::GetArchByName(llvm::LLVMContext *context_, OSName os_name_,
       LOG(FATAL) << "Unrecognized architecture.";
       return nullptr;
 
-    case kArchAArch64LittleEndian_SLEIGH: {
-      DLOG(INFO)
-          << "Using architecture: AArch64 Sleigh, feature set: Little Endian";
-      return GetAArch64Sleigh(context_, os_name_, arch_name_);
-    }
-
-    case kArchAArch64LittleEndian: {
-      DLOG(INFO) << "Using architecture: AArch64, feature set: Little Endian";
-      return GetAArch64(context_, os_name_, arch_name_);
-    }
-
-    case kArchAArch32LittleEndian: {
-      DLOG(INFO) << "Using architecture: AArch32, feature set: Little Endian";
-      return GetAArch32(context_, os_name_, arch_name_);
-      break;
-    }
-
-    case kArchThumb2LittleEndian: {
-      DLOG(INFO) << "Using architecture: thumb2";
-      return GetSleighThumb2(context_, os_name_, arch_name_);
-    }
-
     case kArchX86: {
       DLOG(INFO) << "Using architecture: X86";
       return GetX86(context_, os_name_, arch_name_);
-    }
-
-    case kArchX86_SLEIGH: {
-      DLOG(INFO) << "Using architecture: X86_Sleigh";
-      return GetSleighX86(context_, os_name_, arch_name_);
-    }
-
-    case kArchAMD64_SLEIGH: {
-      DLOG(INFO) << "Using architecture: X86_Sleigh";
-      return GetSleighX86(context_, os_name_, arch_name_);
     }
 
     case kArchX86_AVX: {
@@ -224,26 +173,6 @@ auto Arch::GetArchByName(llvm::LLVMContext *context_, OSName os_name_,
     case kArchAMD64_AVX512: {
       DLOG(INFO) << "Using architecture: AMD64, feature set: AVX512";
       return GetX86(context_, os_name_, arch_name_);
-    }
-
-    case kArchSparc32: {
-      DLOG(INFO) << "Using architecture: 32-bit SPARC";
-      return GetSPARC32(context_, os_name_, arch_name_);
-    }
-
-    case kArchSparc64: {
-      DLOG(INFO) << "Using architecture: 64-bit SPARC";
-      return GetSPARC64(context_, os_name_, arch_name_);
-    }
-
-    case kArchSparc32_SLEIGH: {
-      DLOG(INFO) << "Using architecture: 32-bit SPARC32_Sleigh";
-      return GetSPARC32Sleigh(context_, os_name_, arch_name_);
-    }
-
-    case kArchPPC: {
-      DLOG(INFO) << "Using architecture: PowerPC";
-      return GetSleighPPC(context_, os_name_, arch_name_);
     }
 
     default: {
@@ -391,8 +320,7 @@ bool Arch::IsX86(void) const {
   switch (arch_name) {
     case remill::kArchX86:
     case remill::kArchX86_AVX:
-    case remill::kArchX86_AVX512:
-    case remill::kArchX86_SLEIGH: return true;
+    case remill::kArchX86_AVX512: return true;
     default: return false;
   }
 }
@@ -401,30 +329,9 @@ bool Arch::IsAMD64(void) const {
   switch (arch_name) {
     case remill::kArchAMD64:
     case remill::kArchAMD64_AVX:
-    case remill::kArchAMD64_AVX512:
-    case remill::kArchAMD64_SLEIGH: return true;
+    case remill::kArchAMD64_AVX512: return true;
     default: return false;
   }
-}
-
-bool Arch::IsAArch32(void) const {
-  return remill::kArchAArch32LittleEndian == arch_name;
-}
-
-bool Arch::IsAArch64(void) const {
-  return remill::kArchAArch64LittleEndian == arch_name;
-}
-
-bool Arch::IsSPARC32(void) const {
-  return remill::kArchSparc32 == arch_name;
-}
-
-bool Arch::IsSPARC64(void) const {
-  return remill::kArchSparc64 == arch_name;
-}
-
-bool Arch::IsPPC(void) const {
-  return remill::kArchPPC == arch_name;
 }
 
 bool Arch::IsWindows(void) const {
@@ -689,7 +596,7 @@ void Arch::PrepareModuleDataLayout(llvm::Module *mod) const {
   mod->setTargetTriple(Triple());
 #else
   mod->setTargetTriple(Triple().str());
-#endif // LLVM_VERSION_MAJOR
+#endif  // LLVM_VERSION_MAJOR
 
   // Go and remove compile-time attributes added into the semantics. These
   // can screw up later compilation. We purposefully compile semantics with

@@ -16,9 +16,9 @@
 
 #pragma once
 
+#include "Float.h"
 #include "Int.h"
 #include "TypeTraits.h"
-#include "Float.h"
 
 #if defined(__GNUG__) && !defined(__clang__)
 #  define COMPILING_WITH_GCC 1
@@ -26,8 +26,14 @@
 #  define COMPILING_WITH_GCC 0
 #endif
 
-#pragma clang diagnostic push
-#pragma clang diagnostic fatal "-Wpadded"
+#ifndef REMILL_DISABLE_INT128
+#  define REMILL_DISABLE_INT128 1
+#endif
+
+#ifdef __clang__
+#  pragma clang diagnostic push
+#  pragma clang diagnostic fatal "-Wpadded"
+#endif
 
 #include "remill/Arch/Runtime/Definitions.h"
 
@@ -53,7 +59,7 @@ typedef int32_t addr_diff_t;
 typedef addr16_t addr_t;
 typedef int16_t addr_diff_t;
 #else
-# error "Invalid address size in bits"
+#  error "Invalid address size in bits"
 #endif
 
 // Note: We are re-defining the `std::is_signed` type trait because we can't
@@ -118,9 +124,7 @@ union vec256_t;
 union vec512_t;
 
 #define MAKE_VECTOR(base_type, prefix, nelems, vec_size_bits, width_bytes) \
-  struct prefix##v##nelems##_t final { \
-    base_type elems[nelems]; \
-  } __attribute__((packed)); \
+  PACK(struct prefix##v##nelems##_t final { base_type elems[nelems]; }); \
 \
   static_assert(width_bytes == sizeof(prefix##v##nelems##_t), \
                 "Invalid definition of `" #prefix "v" #nelems "`."); \
@@ -217,28 +221,29 @@ MAKE_VECTOR(double, float64, 8, 512, 64);
 #define NumVectorElems(val) \
   static_cast<addr_t>(VectorType<decltype(val)>::kNumElems)
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-private-field"
+#ifdef __clang__
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wunused-private-field"
+#endif
 
-union vec8_t final {
+PACK(union vec8_t final {
   uint8v1_t bytes;
   int8v1_t sbytes;
-} __attribute__((packed));
+});
 
 static_assert(1 == sizeof(vec8_t), "Invalid structure packing of `vec8_t`.");
 
-union vec16_t final {
+PACK(union vec16_t final {
   uint8v2_t bytes;
   uint16v1_t words;
 
   int8v2_t sbytes;
   int16v1_t swords;
-} __attribute__((packed));
+});
 
 static_assert(2 == sizeof(vec16_t), "Invalid structure packing of `vec16_t`.");
 
-union vec32_t final {
-
+PACK(union vec32_t final {
   // Make this type look like an `[1 x i32]` to LLVM. This is important for
   // the cross-block alias analysis performed by remill-opt, as it enables
   // remill-opt to more easily handle false dependencies.
@@ -251,12 +256,11 @@ union vec32_t final {
   int8v4_t sbytes;
   int16v2_t swords;
   int32v1_t sdwords;
-} __attribute__((packed));
+});
 
 static_assert(4 == sizeof(vec32_t), "Invalid structure packing of `vec32_t`.");
 
-union vec64_t final {
-
+PACK(union vec64_t final {
   // Make this type look like an `[1 x i64]` to LLVM. This is important for
   // the cross-block alias analysis performed by remill-opt, as it enables
   // remill-opt to more easily handle false dependencies.
@@ -272,13 +276,15 @@ union vec64_t final {
   int16v4_t swords;
   int32v2_t sdwords;
   int64v1_t sqwords;
-} __attribute__((packed));
+});
 
-#pragma clang diagnostic pop
+#ifdef __clang__
+#  pragma clang diagnostic pop
+#endif
 
 static_assert(8 == sizeof(vec64_t), "Invalid structure packing of `vec64_t`.");
 
-union vec128_t final {
+PACK(union vec128_t final {
 
 #if !defined(REMILL_DISABLE_INT128)
   // Make this type look like an `[1 x i128]` to LLVM. This is important for
@@ -300,12 +306,12 @@ union vec128_t final {
   int16v8_t swords;
   int32v4_t sdwords;
   int64v2_t sqwords;
-} __attribute__((packed));
+});
 
 static_assert(16 == sizeof(vec128_t),
               "Invalid structure packing of `vec128_t`.");
 
-union vec256_t final {
+PACK(union vec256_t final {
   uint8v32_t bytes;
   uint16v16_t words;
   uint32v8_t dwords;
@@ -322,12 +328,12 @@ union vec256_t final {
   uint128v2_t dqwords;
   int128v2_t sdqwords;
 #endif
-} __attribute__((packed));
+});
 
 static_assert(32 == sizeof(vec256_t),
               "Invalid structure packing of `vec256_t`.");
 
-union vec512_t final {
+PACK(union vec512_t final {
   uint8v64_t bytes;
   uint16v32_t words;
   uint32v16_t dwords;
@@ -344,9 +350,10 @@ union vec512_t final {
   uint128v4_t dqwords;
   int128v4_t sdqwords;
 #endif
-} __attribute__((packed));
+});
 
-static_assert(64 == sizeof(vec512_t), "Invalid structure packing of `vec512_t`.");
+static_assert(64 == sizeof(vec512_t),
+              "Invalid structure packing of `vec512_t`.");
 
 // An n-bit memory reference. This is implemented as an `addr_t`. Part of the
 // reason is because pointers have sizes that are architecture-specific, and
@@ -709,11 +716,11 @@ inline uint64_t operator"" _addr_t(unsigned long long value) {
   return static_cast<addr_t>(value);
 }
 
-#if !defined(REMILL_DISABLE_INT128)
+#  if !defined(REMILL_DISABLE_INT128)
 inline uint128_t operator"" _u128(unsigned long long value) {
   return static_cast<uint128_t>(value);
 }
-#endif
+#  endif
 
 
 inline int8_t operator"" _s8(unsigned long long value) {
@@ -732,14 +739,16 @@ inline int64_t operator"" _s64(unsigned long long value) {
   return static_cast<int64_t>(value);
 }
 
-#if !defined(REMILL_DISABLE_INT128)
+#  if !defined(REMILL_DISABLE_INT128)
 inline int128_t operator"" _s128(unsigned long long value) {
   return static_cast<int128_t>(value);
 }
-#endif
+#  endif
 
 #  define auto_t(T) typename BaseType<T>::BT
 
 #endif  // COMPILING_WITH_GCC
 
-#pragma clang diagnostic pop
+#ifdef __clang__
+#  pragma clang diagnostic pop
+#endif

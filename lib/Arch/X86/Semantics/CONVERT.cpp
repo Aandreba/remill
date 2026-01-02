@@ -102,7 +102,7 @@ template <typename D, typename S1, size_t num_to_convert>
 DEF_SEM(CVTDQ2PD, D dst, S1 src) {
   auto src_vec = SReadV32(src);
   auto dst_vec = FClearV64(FReadV64(dst));
-  _Pragma("unroll") for (size_t i = 0; i < num_to_convert; ++i) {
+  for (size_t i = 0; i < num_to_convert; ++i) {
     auto entry = Float64(SExtractV32(src_vec, i));
     dst_vec = FInsertV64(dst_vec, i, entry);
   }
@@ -128,7 +128,7 @@ template <typename D, typename S1, size_t num_to_convert>
 DEF_SEM(CVTDQ2PS, D dst, S1 src) {
   auto src_vec = SReadV32(src);
   auto dst_vec = FClearV32(FReadV32(dst));
-  _Pragma("unroll") for (size_t i = 0; i < num_to_convert; ++i) {
+  for (size_t i = 0; i < num_to_convert; ++i) {
     auto entry = Float32(SExtractV32(src_vec, i));
     dst_vec = FInsertV32(dst_vec, i, entry);
   }
@@ -152,7 +152,7 @@ template <typename D, typename S1, size_t num_to_convert,
 DEF_SEM(CVTPD2DQ, D dst, S1 src) {
   auto src_vec = FReadV64(src);
   auto dst_vec = SClearV32(SReadV32(dst));
-  _Pragma("unroll") for (size_t i = 0; i < num_to_convert; ++i) {
+  for (size_t i = 0; i < num_to_convert; ++i) {
     float64_t rounded_elem = FRound(FExtractV64(src_vec, i));
     auto entry = Float64ToInt32(rounded_elem);
     dst_vec = SInsertV32(dst_vec, i, entry);
@@ -188,7 +188,7 @@ template <typename D, typename S1, size_t num_to_convert,
 DEF_SEM(CVTPS2DQ, D dst, S1 src) {
   auto src_vec = FReadV32(src);
   auto dst_vec = SClearV32(SReadV32(dst));
-  _Pragma("unroll") for (size_t i = 0; i < num_to_convert; ++i) {
+  for (size_t i = 0; i < num_to_convert; ++i) {
     float32_t rounded_elem = FRound(FExtractV32(src_vec, i));
     dst_vec = SInsertV32(dst_vec, i, Float32ToInt32(rounded_elem));
   }
@@ -415,7 +415,7 @@ template <typename D, typename S1, size_t vec_count>
 DEF_SEM(CVTPS2PD, D dst, S1 src) {
   auto src_vec = FReadV32(src);
   auto dst_vec = FClearV64(FReadV64(dst));
-  _Pragma("unroll") for (size_t i = 0; i < vec_count; ++i) {
+  for (size_t i = 0; i < vec_count; ++i) {
     auto conv_val = Float64(FExtractV32(src_vec, i));
     dst_vec = FInsertV64(dst_vec, i, conv_val);
   }
@@ -427,7 +427,7 @@ template <typename D, typename S1, size_t vec_count>
 DEF_SEM(CVTPD2PS, D dst, S1 src) {
   auto src_vec = FReadV64(src);
   auto dst_vec = FClearV32(FReadV32(dst));
-  _Pragma("unroll") for (size_t i = 0; i < vec_count; ++i) {
+  for (size_t i = 0; i < vec_count; ++i) {
     auto conv_val = Float32(FExtractV64(src_vec, i));
     dst_vec = FInsertV32(dst_vec, i, conv_val);
   }

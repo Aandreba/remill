@@ -35,7 +35,7 @@ ALWAYS_INLINE static bcd80_t _ReadBCD80(Memory *memory, Mn<bcd80_t> op) {
   bcd80_t bcd = {};
   const auto num_digit_pairs = sizeof(bcd.digit_pairs);
 
-  _Pragma("unroll") for (addr_t i = 0; i < num_digit_pairs; i++) {
+  for (addr_t i = 0; i < num_digit_pairs; i++) {
     bcd.digit_pairs[i].u8 = __remill_read_memory_8(memory, op.addr + i);
   }
   auto msb = __remill_read_memory_8(memory, op.addr + num_digit_pairs);
@@ -50,7 +50,7 @@ ALWAYS_INLINE static Memory *_WriteBCD80(Memory *memory, MBCD80W dst,
                                          bcd80_t src) {
   const auto num_digit_pairs = sizeof(src.digit_pairs);
 
-  _Pragma("unroll") for (addr_t i = 0; i < num_digit_pairs; i++) {
+  for (addr_t i = 0; i < num_digit_pairs; i++) {
     memory =
         __remill_write_memory_8(memory, dst.addr + i, src.digit_pairs[i].u8);
   }
@@ -69,7 +69,7 @@ ALWAYS_INLINE static Memory *_WriteBCD80Indefinite(Memory *memory,
       0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xc0, 0xff, 0xff,
   };
 
-  _Pragma("unroll") for (addr_t i = 0; i < sizeof(indefinite); i++) {
+  for (addr_t i = 0; i < sizeof(indefinite); i++) {
     memory = __remill_write_memory_8(memory, dst.addr + i, indefinite[i]);
   }
 

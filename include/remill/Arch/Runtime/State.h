@@ -18,7 +18,7 @@
 
 #include "remill/Arch/Runtime/HyperCall.h"
 
-struct ArchState {
+PACK(struct ArchState {
  public:
   AsyncHyperCall::Name hyper_call;
 
@@ -33,7 +33,7 @@ struct ArchState {
     uint64_t addr_to_store;
     uint32_t hyper_call_vector;
   };
-} __attribute__((packed));
+});
 
 static_assert(16 == sizeof(ArchState),
               "Invalid packing of `struct ArchState`.");

@@ -19,7 +19,7 @@
 namespace {
 
 DEF_SEM(DoVZEROUPPER) {
-  _Pragma("unroll") for (unsigned i = 0; i < IF_64BIT_ELSE(16, 8); ++i) {
+  for (unsigned i = 0; i < IF_64BIT_ELSE(16, 8); ++i) {
     auto &vec = state.vec[i];
     vec.ymm.dqwords.elems[1] = 0;
     IF_AVX512(vec.zmm.dqwords.elems[2] = 0;)
@@ -67,7 +67,7 @@ namespace {
       auto src_val = Read(src1); \
       auto dst_vec = UClearV##element_size(UReadV##element_size(dst)); \
 \
-      _Pragma("unroll") for (auto i = 0u; i < br_num; ++i) { \
+      for (auto i = 0u; i < br_num; ++i) { \
         dst_vec = UInsertV##element_size(dst_vec, i, src_val); \
       } \
       UWriteV##element_size(dst, dst_vec); \
@@ -100,7 +100,7 @@ MAKE_VBROADCASTx_imm(Q, 64, 4);
       auto src_val = UExtractV##element_size(src_vec, 0); \
       auto dst_vec = UClearV##element_size(UReadV##element_size(dst)); \
 \
-      _Pragma("unroll") for (auto i = 0u; i < br_num; ++i) { \
+      for (auto i = 0u; i < br_num; ++i) { \
         dst_vec = UInsertV##element_size(dst_vec, i, src_val); \
       } \
       UWriteV##element_size(dst, dst_vec); \
@@ -166,7 +166,7 @@ namespace {
       auto src_vec = UReadV##chunk_size(src); \
       auto mask_vec = UReadV##chunk_size(mask); \
       auto vec_count = NumVectorElems(src_vec); \
-      _Pragma("unroll") for (size_t index = 0; index < vec_count; index++) { \
+      for (size_t index = 0; index < vec_count; index++) { \
         auto mask_chunk = UExtractV##chunk_size(mask_vec, index); \
         auto src_chunk = UExtractV##chunk_size(src_vec, index); \
         auto dst_chunk = UExtractV##chunk_size(dst_vec, index); \
@@ -208,7 +208,7 @@ namespace {
       auto src_vec = FReadV##chunk_size(src); \
       auto mask_vec = UReadV##chunk_size(mask); \
       auto vec_count = NumVectorElems(src_vec); \
-      _Pragma("unroll") for (size_t index = 0; index < vec_count; index++) { \
+      for (size_t index = 0; index < vec_count; index++) { \
         auto mask_chunk = UExtractV##chunk_size(mask_vec, index); \
         auto src_chunk = FExtractV##chunk_size(src_vec, index); \
         auto dst_chunk = FExtractV##chunk_size(dst_vec, index); \

@@ -16,8 +16,8 @@
 
 #pragma once
 
-#include "Definitions.h"
 #include "Builtin.h"
+#include "Definitions.h"
 #include "Int.h"
 
 typedef float float32_t;
@@ -37,19 +37,22 @@ static_assert(8 == sizeof(float128_t), "Invalid `float128_t` size.");
 // A "native_float80_t" is a native type that is closes to approximating
 // an x86 80-bit float.
 // when building against CUDA, default to 64-bit float80s
-#if !defined(__CUDACC__) && !defined(_WIN32) && (defined(__x86_64__) || defined(__i386__) || defined(_M_X86))
-  #if defined(__float80)
-  typedef __float80 native_float80_t;
-  #else
-  typedef long double native_float80_t;
-  #endif
-static_assert(sizeof(native_float80_t) >= 10, "Invalid `native_float80_t` size.");
+#if !defined(__CUDACC__) && !defined(_WIN32) && \
+    (defined(__x86_64__) || defined(__i386__) || defined(_M_X86))
+#  if defined(__float80)
+typedef __float80 native_float80_t;
+#  else
+typedef long double native_float80_t;
+#  endif
+static_assert(sizeof(native_float80_t) >= 10,
+              "Invalid `native_float80_t` size.");
 #else
-  typedef double native_float80_t;
-  static_assert(sizeof(native_float80_t) == 8, "Invalid `native_float80_t` size.");
+typedef double native_float80_t;
+static_assert(sizeof(native_float80_t) == 8,
+              "Invalid `native_float80_t` size.");
 #endif
 
-struct float80_t final {
+PACK(struct float80_t final {
   uint8_t data[10];
 
   ~float80_t() = default;
@@ -75,8 +78,9 @@ struct float80_t final {
       memcpy_impl(&nf, data, sizeof(nf));
     } else {
       // Native floats are bigger than 80 bits, add padding
-      memcpy_impl((unsigned char*)&nf, data, sizeof(data));
-      memset_impl((unsigned char*)&nf + sizeof(data), 0, sizeof(nf) - sizeof(data));
+      memcpy_impl((unsigned char *) &nf, data, sizeof(data));
+      memset_impl((unsigned char *) &nf + sizeof(data), 0,
+                  sizeof(nf) - sizeof(data));
     }
     return nf;
   }
@@ -105,46 +109,46 @@ struct float80_t final {
     return dst;
 #endif
   }
-} __attribute__((packed));
+});
 
-union nan32_t {
+PACK(union nan32_t {
   float32_t f;
   uint32_t flat;
-  struct {
+  PACK(struct {
     uint32_t payload : 22;
     uint32_t is_quiet_nan : 1;
     uint32_t exponent : 8;
     uint32_t is_negative : 1;
-  } __attribute__((packed));
-} __attribute__((packed));
+  });
+});
 
 static_assert(sizeof(float32_t) == sizeof(nan32_t),
               "Invalid packing of `nan32_t`.");
 
-union nan64_t {
+PACK(union nan64_t {
   float64_t d;
   uint64_t flat;
-  struct {
+  PACK(struct {
     uint64_t payload : 51;
     uint64_t is_quiet_nan : 1;
     uint64_t exponent : 11;
     uint64_t is_negative : 1;
-  } __attribute__((packed));
-} __attribute__((packed));
+  });
+});
 
 static_assert(sizeof(float64_t) == sizeof(nan64_t),
               "Invalid packing of `nan64_t`.");
 
-union nan80_t {
+PACK(union nan80_t {
   float80_t d;
-  struct {
+  PACK(struct {
     uint64_t payload : 62;
     uint64_t is_quiet_nan : 1;
     uint64_t interger_bit : 1;
     uint16_t exponent : 15;
     uint16_t is_negative : 1;
-  } __attribute__((packed));
-} __attribute__((packed));
+  });
+});
 
 static_assert(sizeof(float80_t) == sizeof(nan80_t),
               "Invalid packing of `nan80_t`.");
@@ -153,25 +157,25 @@ static_assert(sizeof(float80_t) == sizeof(nan80_t),
 #  include <cmath>
 #else
 
-#ifndef FP_NORMAL
-#  define FP_NORMAL 4
-#endif
+#  ifndef FP_NORMAL
+#    define FP_NORMAL 4
+#  endif
 
-#ifndef FP_SUBNORMAL
-#  define FP_SUBNORMAL 3
-#endif
+#  ifndef FP_SUBNORMAL
+#    define FP_SUBNORMAL 3
+#  endif
 
-#ifndef FP_ZERO
-#  define FP_ZERO 2
-#endif
+#  ifndef FP_ZERO
+#    define FP_ZERO 2
+#  endif
 
-#ifndef FP_INFINITE
-#  define FP_INFINITE 1
-#endif
+#  ifndef FP_INFINITE
+#    define FP_INFINITE 1
+#  endif
 
-#ifndef FP_NAN
-#  define FP_NAN 0
-#endif
+#  ifndef FP_NAN
+#    define FP_NAN 0
+#  endif
 
 namespace remill_std {
 
@@ -207,86 +211,90 @@ ALWAYS_INLINE static bool signbit(T val) {
 }
 
 ALWAYS_INLINE static int fpclassify(float32_t x) {
-#if __has_builtin(__builtin_fpclassify)
-  return __builtin_fpclassify(FP_NAN, FP_INFINITE, FP_NORMAL, FP_SUBNORMAL, FP_ZERO, x);
-#else
+#  if __has_builtin(__builtin_fpclassify)
+  return __builtin_fpclassify(FP_NAN, FP_INFINITE, FP_NORMAL, FP_SUBNORMAL,
+                              FP_ZERO, x);
+#  else
   nan32_t bits = {x};
 
-#if __has_builtin(__builtin_isnan)
+#    if __has_builtin(__builtin_isnan)
   if (__builtin_isnan(x)) {
-#else
+#    else
   if ((0x7F800001u <= bits.flat && bits.flat <= 0x7FBFFFFFu) ||
-             (0xFF800001u <= bits.flat && bits.flat <= 0xFFBFFFFFu) ||
-             (0x7FC00000u <= bits.flat && bits.flat <= 0x7FFFFFFFu) ||
-             (0xFFC00000u <= bits.flat && bits.flat <= 0xFFFFFFFFu)) {
-#endif
+      (0xFF800001u <= bits.flat && bits.flat <= 0xFFBFFFFFu) ||
+      (0x7FC00000u <= bits.flat && bits.flat <= 0x7FFFFFFFu) ||
+      (0xFFC00000u <= bits.flat && bits.flat <= 0xFFFFFFFFu)) {
+#    endif
     return FP_NAN;
 
-#if __has_builtin(__builtin_isinf)
+#    if __has_builtin(__builtin_isinf)
   } else if (__builtin_isinf(x)) {
-#else
+#    else
   } else if (0x7F800000u == bits.flat || 0xFF800000u == bits.flat) {
-#endif
+#    endif
     return FP_INFINITE;
 
   } else if (!x) {
     return FP_ZERO;
-#if __has_builtin(__builtin_isnormal)
+#    if __has_builtin(__builtin_isnormal)
   } else if (!__builtin_isnormal(x)) {
-#else
+#    else
   } else if (!bits.exponent) {
-#endif
+#    endif
   }
-    return FP_SUBNORMAL;
-  } else {
-    return FP_NORMAL;
-  }
-#endif
+  return FP_SUBNORMAL;
+}
+else {
+  return FP_NORMAL;
+}
+#  endif
 }
 
 ALWAYS_INLINE static int fpclassify(float64_t x) {
-#if __has_builtin(__builtin_fpclassify)
-  return __builtin_fpclassify(FP_NAN, FP_INFINITE, FP_NORMAL, FP_SUBNORMAL, FP_ZERO, x);
-#else
+#  if __has_builtin(__builtin_fpclassify)
+  return __builtin_fpclassify(FP_NAN, FP_INFINITE, FP_NORMAL, FP_SUBNORMAL,
+                              FP_ZERO, x);
+#  else
   nan64_t bits = {x};
 
-#if __has_builtin(__builtin_isnan)
+#    if __has_builtin(__builtin_isnan)
   if (__builtin_isnan(x)) {
-#else
-  if ((0x7FF0000000000001 <= bits.flat &&
-       bits.flat <= 0x7FF7FFFFFFFFFFFFull) ||
+#    else
+  if ((0x7FF0000000000001 <= bits.flat && bits.flat <= 0x7FF7FFFFFFFFFFFFull) ||
       (0xFFF0000000000001ull <= bits.flat &&
        bits.flat <= 0xFFF7FFFFFFFFFFFFull) ||
       (0x7FF8000000000000ull <= bits.flat &&
        bits.flat <= 0x7FFFFFFFFFFFFFFFull) ||
       (0xFFF8000000000000ull <= bits.flat &&
        bits.flat <= 0xFFFFFFFFFFFFFFFFull)) {
-#endif
+#    endif
     return FP_NAN;
 
-#if __has_builtin(__builtin_isinf)
+#    if __has_builtin(__builtin_isinf)
   } else if (__builtin_isinf(x)) {
-#else
+#    else
   } else if (0x7FF0000000000000ull == bits.flat ||
              0xFFF0000000000000ull == bits.flat) {
-#endif
+#    endif
   }
-    return FP_INFINITE;
+  return FP_INFINITE;
+}
+else if (!x) {
+  return FP_ZERO;
 
-  } else if (!x) {
-    return FP_ZERO;
-
-#if __has_builtin(__builtin_isnormal)
-  } else if (!__builtin_isnormal(x)) {
-#else
-  } else if (!bits.exponent) {
-#endif
-    return FP_SUBNORMAL;
-
-  } else {
-    return FP_NORMAL;
-  }
-#endif
+#    if __has_builtin(__builtin_isnormal)
+}
+else if (!__builtin_isnormal(x)) {
+#    else
+}
+else if (!bits.exponent) {
+#    endif
+  return FP_SUBNORMAL;
+}
+else {
+  return FP_NORMAL;
+}
+#  endif
 }
 
 }  // namespace remill_std

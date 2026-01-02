@@ -82,7 +82,7 @@ DEF_FPU_SEM(FBLD, RF80W, MBCD80 src1) {
   native_float80_t mag = 1.0;  // Magnitude of decimal position
 
   // Iterate through pairs of digits, encoded as bytes.
-  _Pragma("unroll") for (addr_t i = 0; i < sizeof(src1_bcd.digit_pairs); i++) {
+  for (addr_t i = 0; i < sizeof(src1_bcd.digit_pairs); i++) {
 
     // We expect each half-byte to be a valid binary-coded decimal
     // digit (0-9). If not, the decoding result is undefined. The
@@ -127,15 +127,17 @@ DEF_FPU_SEM(FLD, RF80W, T src1) {
   if (state.sw.ie) {
 
 #if defined(__x86_64__) || defined(__i386__) || defined(_M_X86)
-// On non-x86 architectures, native_float80_t is defined as a double (float64_t)
-// On x86, it is a long double (80-bit of native representation).
-// Handle these separate cases.
-    static_assert(sizeof(native_float80_t) >= sizeof(nan80_t), "Float/NaN size mismatch");
+    // On non-x86 architectures, native_float80_t is defined as a double (float64_t)
+    // On x86, it is a long double (80-bit of native representation).
+    // Handle these separate cases.
+    static_assert(sizeof(native_float80_t) >= sizeof(nan80_t),
+                  "Float/NaN size mismatch");
     // It is resonable to have >= in the above test because
     // on x86/amd64 a native_float80_t is a float80 + padding
     nan80_t res_nan = {static_cast<native_float80_t>(res)};
 #else
-    static_assert(sizeof(native_float80_t) == sizeof(nan64_t), "Float/NaN size mismatch");
+    static_assert(sizeof(native_float80_t) == sizeof(nan64_t),
+                  "Float/NaN size mismatch");
     // on non-x86 architectures, native_float80_t should be
     // a 64-bit double, so the exact size of nan64_t
     nan64_t res_nan = {static_cast<native_float80_t>(res)};
@@ -226,11 +228,11 @@ DEF_FPU_SEM(DoFCHS) {
 }
 
 #if defined(__x86_64__) || defined(__i386__) || defined(_M_X86)
-#define __builtin_fmod_f80 __builtin_fmodl
-#define __builtin_remainder_f80 __builtin_remainderl
+#  define __builtin_fmod_f80 __builtin_fmodl
+#  define __builtin_remainder_f80 __builtin_remainderl
 #else
-#define __builtin_fmod_f80 __builtin_fmod
-#define __builtin_remainder_f80 __builtin_remainder
+#  define __builtin_fmod_f80 __builtin_fmod
+#  define __builtin_remainder_f80 __builtin_remainder
 #endif
 
 // NOTE(pag): This only sort of, but doesn't really make sense. That is, it's
@@ -583,7 +585,8 @@ template <typename T>
 DEF_FPU_SEM(FIADD, RF80W dst, RF80W src1, T src2) {
   SetFPUIpOp();
   SetFPUDp(src2);
-  auto res = CheckedFloatBinOp(state, FAdd80, Float80(Read(src1)), Float80(Signed(Read(src2))));
+  auto res = CheckedFloatBinOp(state, FAdd80, Float80(Read(src1)),
+                               Float80(Signed(Read(src2))));
   Write(dst, Float80(res));
   return memory;
 }
@@ -627,7 +630,8 @@ template <typename T>
 DEF_FPU_SEM(FIMUL, RF80W dst, RF80W src1, T src2) {
   SetFPUIpOp();
   SetFPUDp(src2);
-  auto res = CheckedFloatBinOp(state, FMul80, Float80(Read(src1)), Float80(Signed(Read(src2))));
+  auto res = CheckedFloatBinOp(state, FMul80, Float80(Read(src1)),
+                               Float80(Signed(Read(src2))));
   Write(dst, res);
   return memory;
 }
@@ -668,7 +672,8 @@ template <typename T>
 DEF_FPU_SEM(FIDIV, RF80W dst, RF80W src1, T src2) {
   SetFPUIpOp();
   SetFPUDp(src2);
-  auto res = CheckedFloatBinOp(state, FDiv80, Float80(Read(src1)), Float80(Signed(Read(src2))));
+  auto res = CheckedFloatBinOp(state, FDiv80, Float80(Read(src1)),
+                               Float80(Signed(Read(src2))));
   Write(dst, res);
   return memory;
 }
@@ -698,7 +703,8 @@ template <typename T>
 DEF_FPU_SEM(FIDIVR, RF80W dst, RF80W src1, T src2) {
   SetFPUIpOp();
   SetFPUDp(src2);
-  auto res = CheckedFloatBinOp(state, FDiv80, Float80(Signed(Read(src2))), Float80(Read(src1)));
+  auto res = CheckedFloatBinOp(state, FDiv80, Float80(Signed(Read(src2))),
+                               Float80(Read(src1)));
   Write(dst, res);
   return memory;
 }
@@ -1066,7 +1072,8 @@ DEF_HELPER(OrderedCompare, native_float80_t src1, native_float80_t src2)->void {
   }
 }
 
-DEF_HELPER(UnorderedCompare, native_float80_t src1, native_float80_t src2)->void {
+DEF_HELPER(UnorderedCompare, native_float80_t src1, native_float80_t src2)
+    ->void {
   state.sw.de |= IsDenormal(src1) | IsDenormal(src2);
   state.sw.ie = 0;
 
@@ -1188,7 +1195,8 @@ DEF_FPU_SEM(DoFCOMPP) {
   return memory;
 }
 
-DEF_HELPER(UnorderedCompareEflags, native_float80_t src1, native_float80_t src2)->void {
+DEF_HELPER(UnorderedCompareEflags, native_float80_t src1, native_float80_t src2)
+    ->void {
   state.sw.de |= IsDenormal(src1) | IsDenormal(src2);
   state.sw.ie = 0;
 
@@ -1215,7 +1223,8 @@ DEF_HELPER(UnorderedCompareEflags, native_float80_t src1, native_float80_t src2)
   }
 }
 
-DEF_HELPER(OrderedCompareEflags, native_float80_t src1, native_float80_t src2)->void {
+DEF_HELPER(OrderedCompareEflags, native_float80_t src1, native_float80_t src2)
+    ->void {
   state.sw.de |= IsDenormal(src1) | IsDenormal(src2);
   state.sw.ie = 0;
 

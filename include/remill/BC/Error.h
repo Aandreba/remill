@@ -15,10 +15,10 @@
  */
 #pragma once
 
+#include <llvm/Support/Error.h>
 #include <llvm/Support/ErrorOr.h>
 #include <llvm/Support/Format.h>
 #include <llvm/Support/raw_ostream.h>
-#include <llvm/Support/Error.h>
 
 #include <system_error>
 
