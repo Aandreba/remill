@@ -280,7 +280,7 @@ PACK(union vec64_t final {
 
 static_assert(8 == sizeof(vec64_t), "Invalid structure packing of `vec64_t`.");
 
-PACK(union vec128_t final {
+union vec128_t final {
 
 #if !defined(REMILL_DISABLE_INT128)
   // Make this type look like an `[1 x i128]` to LLVM. This is important for
@@ -302,7 +302,7 @@ PACK(union vec128_t final {
   int16v8_t swords;
   int32v4_t sdwords;
   int64v2_t sqwords;
-});
+};
 
 static_assert(16 == sizeof(vec128_t),
               "Invalid structure packing of `vec128_t`.");

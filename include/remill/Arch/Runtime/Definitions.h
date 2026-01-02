@@ -47,7 +47,7 @@
 #  define PACK_S(_name) __pragma(pack(push, 1)) struct _name __pragma(pack(pop))
 #else
 #  define PACK(...) __VA_ARGS__ __attribute__((packed))
-#  define PACK_S(_name) struct [[gnu::packed]] name
+#  define PACK_S(_name) struct [[gnu::packed]] _name
 #endif
 
 // Attributes that will force inlining of specific code.

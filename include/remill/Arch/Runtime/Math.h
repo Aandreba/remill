@@ -52,7 +52,7 @@ static_assert(sizeof(native_float80_t) == 8,
               "Invalid `native_float80_t` size.");
 #endif
 
-PACK_S(float80_t) final {
+struct float80_t final {
   uint8_t data[10];
 
   ~float80_t() = default;
