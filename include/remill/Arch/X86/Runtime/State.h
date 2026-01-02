@@ -36,6 +36,7 @@
 #  pragma clang diagnostic fatal "-Wpadded"
 #endif
 
+#include "remill/Arch/Runtime/Float.h"
 #include "remill/Arch/Runtime/State.h"
 #include "remill/Arch/Runtime/Types.h"
 

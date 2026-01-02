@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#if defined(__x86_64__)
+#if defined(__x86_64__) || defined(_M_AMD64)
 #  include "remill/Arch/X86/Runtime/State.h"
 #  define REMILL_HYPERCALL_AMD64 1
 #elif defined(__i386__) || defined(_M_X86)
@@ -23,7 +23,7 @@
 #elif defined(__arm__)
 #  include "remill/Arch/AArch32/Runtime/State.h"
 #  define REMILL_HYPERCALL_ARM 1
-#elif defined(__aarch64__)
+#elif defined(__aarch64__) || defined(_M_ARM64)
 #  include "remill/Arch/AArch64/Runtime/State.h"
 #  define REMILL_HYPERCALL_AARCH64 1
 #elif defined(__sparc__)
@@ -43,6 +43,7 @@
 #  error "Cannot deduce hyper call architecture"
 #endif
 
+#include "remill/Arch/Runtime/Definitions.h"
 #include "remill/Arch/Runtime/Intrinsics.h"
 
 Memory *__remill_sync_hyper_call(State &state, Memory *mem,
@@ -92,10 +93,10 @@ Memory *__remill_sync_hyper_call(State &state, Memory *mem,
     case SyncHyperCall::kX86LoadGlobalDescriptorTable: {
       const auto read =
           __remill_read_memory_64(mem, static_cast<addr_t>(state.addr_to_load));
-      struct GdtrRecord {
+      PACK(struct GdtrRecord {
         uint16_t *length;
         void *base;
-      } __attribute__((packed));
+      });
       const auto *gdtr = reinterpret_cast<const GdtrRecord *>(&read);
       asm volatile("lgdt %0" : : "m"(gdtr));
       break;
@@ -104,10 +105,10 @@ Memory *__remill_sync_hyper_call(State &state, Memory *mem,
     case SyncHyperCall::kX86LoadInterruptDescriptorTable: {
       const auto read =
           __remill_read_memory_64(mem, static_cast<addr_t>(state.addr_to_load));
-      struct IdtrRecord {
+      PACK(struct IdtrRecord {
         uint16_t length;
         void *base;
-      } __attribute__((packed));
+      });
       const auto *idtr = reinterpret_cast<const IdtrRecord *>(&read);
       asm volatile("lidt %0" : : "m"(idtr));
       break;
@@ -175,7 +176,7 @@ Memory *__remill_sync_hyper_call(State &state, Memory *mem,
       mem = __remill_x86_set_control_reg_4(mem);
       break;
 
-#if defined(__clang_major__) && __clang_major__ >= 20
+#    if defined(__clang_major__) && __clang_major__ >= 20
     case SyncHyperCall::kX86SysCall:
     case SyncHyperCall::kX86SysEnter:
     case SyncHyperCall::kX86SysExit:
@@ -183,7 +184,7 @@ Memory *__remill_sync_hyper_call(State &state, Memory *mem,
       // These hypercalls are not executed in normal test workflows anyway
       __builtin_debugtrap();
       break;
-#else
+#    else
     case SyncHyperCall::kX86SysCall:
       asm volatile("syscall"
                    : "=a"(state.gpr.rax.dword), "=r"(esp)
@@ -211,7 +212,7 @@ Memory *__remill_sync_hyper_call(State &state, Memory *mem,
                      "S"(state.gpr.rsi.dword), "D"(state.gpr.rdi.dword),
                      "r"(esp), "r"(ebp));
       break;
-#endif
+#    endif
 
 #  elif REMILL_HYPERCALL_AMD64
 
@@ -243,7 +244,7 @@ Memory *__remill_sync_hyper_call(State &state, Memory *mem,
       mem = __remill_amd64_set_control_reg_8(mem);
       break;
 
-#if defined(__clang_major__) && __clang_major__ >= 20
+#    if defined(__clang_major__) && __clang_major__ >= 20
     case SyncHyperCall::kX86SysCall:
     case SyncHyperCall::kX86SysEnter:
     case SyncHyperCall::kX86SysExit:
@@ -251,7 +252,7 @@ Memory *__remill_sync_hyper_call(State &state, Memory *mem,
       // These hypercalls are not executed in normal test workflows anyway
       __builtin_debugtrap();
       break;
-#else
+#    else
     case SyncHyperCall::kX86SysCall:
       asm volatile("syscall"
                    : "=a"(state.gpr.rax.qword), "=r"(rsp)
@@ -282,7 +283,7 @@ Memory *__remill_sync_hyper_call(State &state, Memory *mem,
                      "r"(rsp), "r"(rbp), "r"(r8), "r"(r9), "r"(r10), "r"(r11),
                      "r"(r12), "r"(r13), "r"(r14), "r"(r15));
       break;
-#endif
+#    endif
 
 #  endif
 
@@ -417,9 +418,7 @@ Memory *__remill_sync_hyper_call(State &state, Memory *mem,
       mem = __remill_ppc_emulate_instruction(mem);
       break;
 
-  case SyncHyperCall::kPPCSysCall:
-      mem = __remill_ppc_syscall(mem);
-      break;
+    case SyncHyperCall::kPPCSysCall: mem = __remill_ppc_syscall(mem); break;
 
 #endif
 

@@ -44,8 +44,10 @@
 
 #ifdef _MSC_VER
 #  define PACK(...) __pragma(pack(push, 1)) __VA_ARGS__ __pragma(pack(pop))
+#  define PACK_S(_name) __pragma(pack(push, 1)) struct _name __pragma(pack(pop))
 #else
 #  define PACK(...) __VA_ARGS__ __attribute__((packed))
+#  define PACK_S(_name) struct [[gnu::packed]] name
 #endif
 
 // Attributes that will force inlining of specific code.
@@ -64,7 +66,7 @@
 #ifdef _MSC_VER
 #  define FLATTEN [[msvc::flatten]]
 #else
-#  define FLATTEN __attribute__((flatten))
+#  define FLATTEN [[gnu::flatten]]
 #endif
 
 #ifdef _MSC_VER
@@ -81,7 +83,7 @@
 
 // Define a semantics implementing function.
 #define DEF_SEM(name, ...) \
-  ALWAYS_INLINE FLATTEN static Memory *name(Memory *memory, State &state, \
+  FLATTEN ALWAYS_INLINE static Memory *name(Memory *memory, State &state, \
                                             ##__VA_ARGS__)
 
 template <typename R, typename... Args>
@@ -92,14 +94,14 @@ inline static constexpr auto Specialize(R (*)(Args...), R (*b)(Args...))
 
 // Define a semantics implementing function.
 #define DEF_COND_SEM(name, ...) \
-  ALWAYS_INLINE FLATTEN static Memory *name##_impl( \
+  FLATTEN ALWAYS_INLINE static Memory *name##_impl( \
       Memory *memory, State &state, ##__VA_ARGS__); \
   static Memory *name##_spec(Memory *memory, State &state, R8 __cond, \
                              R8W __branch_taken, ##__VA_ARGS__) { \
     return nullptr; \
   } \
   template <typename... Args> \
-  ALWAYS_INLINE FLATTEN static Memory *name##_wrapped( \
+  FLATTEN ALWAYS_INLINE static Memory *name##_wrapped( \
       Memory *memory, State &state, R8 __cond, R8W __branch_taken, \
       Args... args) { \
     if (Read(__cond)) { \
@@ -111,12 +113,12 @@ inline static constexpr auto Specialize(R (*)(Args...), R (*b)(Args...))
     } \
   } \
   static constexpr auto name = Specialize(name##_spec, name##_wrapped); \
-  ALWAYS_INLINE FLATTEN static Memory *name##_impl( \
+  FLATTEN ALWAYS_INLINE static Memory *name##_impl( \
       Memory *memory, State &state, ##__VA_ARGS__)
 
 // Define a semantics implementing function.
 #define DEF_HELPER(name, ...) \
-  ALWAYS_INLINE FLATTEN static auto name(Memory *&memory, State &state, \
+  FLATTEN ALWAYS_INLINE static auto name(Memory *&memory, State &state, \
                                          ##__VA_ARGS__)
 
 // An instruction where the implementation is the same for all operand sizes.

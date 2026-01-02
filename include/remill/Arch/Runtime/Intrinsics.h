@@ -125,7 +125,7 @@ USED extern Memory *__remill_async_hyper_call(State &, addr_t ret_addr,
 // not be inlined. Then, when the lifted functions are moved to the target
 // module, the intrinsic implementation won't be moved across and will be lost,
 // leaving calls to it in the lifted IR.
-ALWAYS_INLINE USED extern Memory *__remill_sync_hyper_call(State &, Memory *,
+USED ALWAYS_INLINE extern Memory *__remill_sync_hyper_call(State &, Memory *,
                                                            SyncHyperCall::Name);
 
 // Memory barriers types:

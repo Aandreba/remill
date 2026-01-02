@@ -18,10 +18,6 @@
 
 #include "Builtin.h"
 
-#ifndef REMILL_DISABLE_INT128
-#  define REMILL_DISABLE_INT128 1
-#endif
-
 #if __has_include(<cstdint>)
 #  include <cstddef>
 #  include <cstdint>

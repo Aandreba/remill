@@ -52,7 +52,7 @@ static_assert(sizeof(native_float80_t) == 8,
               "Invalid `native_float80_t` size.");
 #endif
 
-PACK(struct float80_t final {
+PACK_S(float80_t) final {
   uint8_t data[10];
 
   ~float80_t() = default;
@@ -109,7 +109,7 @@ PACK(struct float80_t final {
     return dst;
 #endif
   }
-});
+};
 
 PACK(union nan32_t {
   float32_t f;

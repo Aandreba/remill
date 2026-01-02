@@ -16,23 +16,30 @@
 
 #pragma once
 
-union bcd_digit_pair_t {
+#include <cstdint>
+
+#include "remill/Arch/Runtime/Definitions.h"
+#include "remill/Arch/Runtime/Int.h"
+#include "remill/Arch/X86/Runtime/State.h"
+
+PACK(union bcd_digit_pair_t {
   uint8_t u8;
-  struct {
+  PACK(struct {
     uint8_t lsd : 4;  // Least-significant digit
     uint8_t msd : 4;  // Most-significant digit
-  } __attribute((packed)) pair;
-} __attribute((packed));
+  })
+  pair;
+});
 
 // TODO(joe): Assumes little endian.
 // 80-bit packed binary-coded decimal.
-struct bcd80_t final {
+PACK(struct bcd80_t final {
   union bcd_digit_pair_t digit_pairs[9];
-  struct {
+  PACK(struct {
     uint8_t _unused : 7;  // No meaning in encoding
     uint8_t is_negative : 1;
-  } __attribute((packed));
-} __attribute__((packed));
+  });
+});
 
 static_assert(10 == sizeof(bcd80_t), "Invalid `bcd80_t` size.");
 

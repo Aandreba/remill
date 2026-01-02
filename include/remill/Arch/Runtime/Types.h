@@ -26,10 +26,6 @@
 #  define COMPILING_WITH_GCC 0
 #endif
 
-#ifndef REMILL_DISABLE_INT128
-#  define REMILL_DISABLE_INT128 1
-#endif
-
 #ifdef __clang__
 #  pragma clang diagnostic push
 #  pragma clang diagnostic fatal "-Wpadded"

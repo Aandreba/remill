@@ -180,7 +180,7 @@ DEF_HELPER(SquareRoot32, float32_t src_float)->float32_t {
       temp_nan.is_quiet_nan = 1;  // equivalent to a bitwise OR with 0x00400000
       square_root = temp_nan.f;
 
-    // Else, src is a QNaN. Pass it directly to the result:
+      // Else, src is a QNaN. Pass it directly to the result:
     } else {
       square_root = src_float;
     }
